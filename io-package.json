@@ -1,0 +1,94 @@
+{
+    "common": {
+        "name": "meteoswiss",
+        "version": "0.0.1",
+        "news": {
+            "0.0.1": {
+                "en": "initial release",
+                "de": "Erstveröffentlichung",
+                "ru": "Начальная версия",
+                "pt": "lançamento inicial",
+                "nl": "Eerste uitgave",
+                "fr": "Première version",
+                "it": "Versione iniziale",
+                "es": "Versión inicial",
+                "pl": "Pierwsze wydanie",
+                "zh-cn": "首次出版"
+            }
+        },
+        "title": "MeteoSwiss",
+        "titleLang": {
+            "en": "MeteoSwiss",
+            "de": "MeteoSwiss",
+            "ru": "MeteoSwiss",
+            "pt": "MeteoSwiss",
+            "nl": "MeteoSwiss",
+            "fr": "MeteoSwiss",
+            "it": "MeteoSwiss",
+            "es": "MeteoSwiss",
+            "pl": "MeteoSwiss",
+            "zh-cn": "MeteoSwiss"
+        },
+        "desc": {
+            "en": "Provides weather information from MeteoSwiss",
+            "de": "Provides weather information from MeteoSwiss",
+            "ru": "Provides weather information from MeteoSwiss",
+            "pt": "Provides weather information from MeteoSwiss",
+            "nl": "Provides weather information from MeteoSwiss",
+            "fr": "Provides weather information from MeteoSwiss",
+            "it": "Provides weather information from MeteoSwiss",
+            "es": "Provides weather information from MeteoSwiss",
+            "pl": "Provides weather information from MeteoSwiss",
+            "zh-cn": "Provides weather information from MeteoSwiss"
+        },
+        "authors": ["deMynchi <nobody@world.com>"],
+        "keywords": ["weather", "meteo", "switzerland"],
+        "license": "MIT",
+        "platform": "Javascript/Node.js",
+        "main": "build/main.js",
+        "icon": "meteoswiss.png",
+        "enabled": true,
+        "extIcon": "https://raw.githubusercontent.com/deMynchi/ioBroker.meteoswiss/master/admin/meteoswiss.png",
+        "readme": "https://github.com/deMynchi/ioBroker.meteoswiss/blob/master/README.md",
+        "loglevel": "info",
+        "mode": "daemon",
+        "type": "weather",
+        "compact": true,
+        "connectionType": "cloud",
+        "dataSource": "poll",
+        "materialize": true,
+        "dependencies": [
+            {
+                "js-controller": ">=2.0.0"
+            }
+        ]
+    },
+    "native": {
+        "option1": true,
+        "option2": "42"
+    },
+    "objects": [],
+    "instanceObjects": [
+        {
+            "_id": "info",
+            "type": "channel",
+            "common": {
+                "name": "Information"
+            },
+            "native": {}
+        },
+        {
+            "_id": "info.connection",
+            "type": "state",
+            "common": {
+                "role": "indicator.connected",
+                "name": "Device or service connected",
+                "type": "boolean",
+                "read": true,
+                "write": false,
+                "def": false
+            },
+            "native": {}
+        }
+    ]
+}
