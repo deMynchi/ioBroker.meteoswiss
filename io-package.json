@@ -57,6 +57,7 @@
         "connectionType": "cloud",
         "dataSource": "poll",
         "materialize": true,
+        "messagebox": true,
         "dependencies": [
             {
                 "js-controller": ">=2.0.0"
@@ -64,8 +65,9 @@
         ]
     },
     "native": {
-        "option1": true,
-        "option2": "42"
+        "language": "de",
+        "zips": [],
+        "stations": []
     },
     "objects": [],
     "instanceObjects": [

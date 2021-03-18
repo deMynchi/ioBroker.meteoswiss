@@ -1,4 +1,5 @@
 .git
+.dev-server
 .idea
 *.code-workspace
 node_modules
