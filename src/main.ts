@@ -36,9 +36,20 @@ function toIconUrl(icon?: number): string | undefined {
     return ICON_URL_FORMAT.replace('%s', num);
 }
 
+/**
+ * Converts minutes to milliseconds for better readability.
+ *
+ * @param minutes The number of minutes-
+ * @returns The total number of milliseconds.
+ */
+function minutes(minutes: number): number {
+    return minutes * 60 * 1000;
+}
+
 class MeteoSwiss extends utils.Adapter {
     private axios!: AxiosInstance;
     private database!: Database<sqlite3.Database, sqlite3.Statement>;
+    private refreshTimer?: NodeJS.Timeout;
 
     public constructor(options: Partial<utils.AdapterOptions> = {}) {
         super({
@@ -71,20 +82,6 @@ class MeteoSwiss extends utils.Adapter {
         await this.loadDatabase();
 
         await this.createObjects();
-
-        /*await this.setObjectNotExistsAsync('testVariable', {
-            type: 'state',
-            common: {
-                name: 'testVariable',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: true,
-            },
-            native: {},
-        });
-
-        await this.setStateAsync('testVariable', { val: true, ack: true });*/
     }
 
     /**
@@ -95,6 +92,9 @@ class MeteoSwiss extends utils.Adapter {
     }
 
     private async unload(): Promise<void> {
+        if (this.refreshTimer) {
+            clearTimeout(this.refreshTimer);
+        }
         await this.database.close();
     }
 
@@ -121,7 +121,6 @@ class MeteoSwiss extends utils.Adapter {
         try {
             await this.openDatabase(filename);
 
-            // TODO: check version
             const info = await this.downloadJson<Rest.DbInfo>('dbinfo.json', true);
 
             const metadata = await this.database.get<Db.Metadata>('SELECT * FROM metadata');
@@ -130,6 +129,7 @@ class MeteoSwiss extends utils.Adapter {
             }
 
             this.log.debug(`Outdated local database: ${metadata?.version} <> ${info.dbVersion}`);
+            await this.database.close();
         } catch (error) {
             this.log.debug(`Couldn't open local database ${filename}: ${error}`);
         }
@@ -188,17 +188,41 @@ class MeteoSwiss extends utils.Adapter {
     }
 
     private async updateStates(firstRun: boolean): Promise<void> {
-        for (let i = 0; i < this.config.zips.length; i++) {
-            const zip = this.config.zips[i];
-            await this.updateZip(zip, firstRun);
+        let timeout = 0;
+        try {
+            for (let i = 0; i < this.config.zips.length; i++) {
+                const zip = this.config.zips[i];
+                await this.updateZip(zip, firstRun);
+            }
+
+            const currentWeather = await this.downloadJson<Rest.CurrentWeather>('currentWeather.json', true);
+
+            // calculate the next update time from the received timestamp
+            // data is updated every 10 minutes, we wait 11 minutes to ensure the data is available on the server
+            const now = Date.now();
+            const lastUpdate = currentWeather.smnTime;
+            timeout = lastUpdate + minutes(11) - now;
+
+            for (let i = 0; i < this.config.stations.length; i++) {
+                const station = this.config.stations[i];
+                await this.updateStation(station, currentWeather.data[station] || {}, firstRun);
+            }
+        } catch (error) {
+            this.log.error(`Update error ${error}`);
         }
 
-        const currentWeather = await this.downloadJson<Rest.CurrentWeather>('currentWeather.json', true);
+        // ensure the next update is between 3 and 11 minutes from now
+        timeout = Math.min(Math.max(timeout, minutes(3)), minutes(11));
 
-        for (let i = 0; i < this.config.stations.length; i++) {
-            const station = this.config.stations[i];
-            await this.updateStation(station, currentWeather.data[station] || {}, firstRun);
-        }
+        // randomize the timeout so not everybody sends a request at the same time (+/- 30 seconds)
+        timeout += minutes(Math.random() - 0.5);
+        this.log.debug(`Next update will be in ${timeout / 1000} seconds`);
+        this.refreshTimer = setTimeout(() => this.refresh(), timeout);
+    }
+
+    private refresh(): void {
+        this.log.info('Refreshing data');
+        this.updateStates(false).catch((e) => this.log.error(`Update error ${e}`));
     }
 
     private async updateZip(zip: number, firstRun: boolean): Promise<void> {
@@ -320,7 +344,7 @@ class MeteoSwiss extends utils.Adapter {
                     );
                 }
 
-                const offset = (day * 24 + hour) * 3600 * 1000;
+                const offset = (day * 24 + hour) * minutes(60);
                 const now = detail.graph.start + offset;
                 await this.updateValue(`${channel}.time`, toDateStr(now));
 
@@ -346,7 +370,7 @@ class MeteoSwiss extends utils.Adapter {
                 let precipitationSum = 0;
                 for (let p = 0; p < 18; p++) {
                     // 18 = 3h * 6 "10-minute-intervals"
-                    if (now + p * 10 * 60 * 1000 < detail.graph.startLowResolution) {
+                    if (now + p * minutes(10) < detail.graph.startLowResolution) {
                         precipitationSum += detail.graph.precipitation10m[precipitationIndex10m];
                         precipitationIndex10m++;
                     } else {
