@@ -17,11 +17,15 @@ const DYNAMIC_BASE_URL = 'https://app-prod-ws.meteoswiss-app.ch/v1/';
 const USER_AGENT = 'Android-30 ch.admin.meteoswiss-2410';
 const ICON_URL_FORMAT = 'https://cdn.jsdelivr.net/npm/meteo-icons/icons/weathericon_%s.png';
 
-function toDateStr(timestamp: number): string {
-    return new Date(timestamp).toISOString();
+function toDateStr(timestamp: number | undefined): string | undefined {
+    return timestamp ? new Date(timestamp).toISOString() : undefined;
 }
 
-function toIconUrl(icon: number): string | undefined {
+function toNumber(value?: number): number | undefined {
+    return value === 32767 ? undefined : value;
+}
+
+function toIconUrl(icon?: number): string | undefined {
     if (icon === undefined) {
         return undefined;
     }
@@ -189,9 +193,11 @@ class MeteoSwiss extends utils.Adapter {
             await this.updateZip(zip, firstRun);
         }
 
+        const currentWeather = await this.downloadJson<Rest.CurrentWeather>('currentWeather.json', true);
+
         for (let i = 0; i < this.config.stations.length; i++) {
             const station = this.config.stations[i];
-            await this.updateStation(station, firstRun);
+            await this.updateStation(station, currentWeather.data[station] || {}, firstRun);
         }
     }
 
@@ -226,24 +232,30 @@ class MeteoSwiss extends utils.Adapter {
             const channel = `${zip}.forecast-${day}`;
             if (firstRun) {
                 await this.ensureChannel(channel, 'Forecast');
-                await this.ensureState(`${channel}.date`, 'Date', 'string', 'text');
+                await this.ensureState(`${channel}.date`, 'Date', 'string', `date.forecast.${day}`);
                 await this.ensureState(`${channel}.icon`, 'Icon', 'number', 'value');
                 await this.ensureState(`${channel}.iconUrl`, 'Icon URL', 'string', 'text.url');
                 await this.ensureState(
                     `${channel}.temperatureMax`,
                     'Temperature Max',
                     'number',
-                    'value.temperature',
+                    `value.temperature.max.forecast.${day}`,
                     '°C',
                 );
                 await this.ensureState(
                     `${channel}.temperatureMin`,
                     'Temperature Min',
                     'number',
-                    'value.temperature',
+                    `value.temperature.min.forecast.${day}`,
                     '°C',
                 );
-                await this.ensureState(`${channel}.precipitation`, 'Precipitation', 'number', 'value', 'mm');
+                await this.ensureState(
+                    `${channel}.precipitation`,
+                    'Precipitation',
+                    'number',
+                    `value.precipitation.forecast.${day}`,
+                    'mm',
+                );
             }
 
             const forecast = detail.forecast[day];
@@ -270,20 +282,26 @@ class MeteoSwiss extends utils.Adapter {
                     await this.ensureState(`${channel}.time`, 'Time', 'string', 'date');
                     await this.ensureState(`${channel}.icon`, 'Icon', 'number', 'value');
                     await this.ensureState(`${channel}.iconUrl`, 'Icon URL', 'string', 'text.url');
-                    await this.ensureState(`${channel}.windDirection`, 'Wind Direction', 'number', 'value', '°');
-                    await this.ensureState(`${channel}.windSpeed`, 'Wind Speed', 'number', 'value.speed', 'km/h');
+                    await this.ensureState(
+                        `${channel}.windDirection`,
+                        'Wind Direction',
+                        'number',
+                        'value.direction.wind',
+                        '°',
+                    );
+                    await this.ensureState(`${channel}.windSpeed`, 'Wind Speed', 'number', 'value.speed.wind', 'km/h');
                     await this.ensureState(
                         `${channel}.temperatureMin`,
                         'Temperature Min',
                         'number',
-                        'value.temperature',
+                        'value.temperature.min',
                         '°C',
                     );
                     await this.ensureState(
                         `${channel}.temperatureMax`,
                         'Temperature Max',
                         'number',
-                        'value.temperature',
+                        'value.temperature.max',
                         '°C',
                     );
                     await this.ensureState(
@@ -293,7 +311,13 @@ class MeteoSwiss extends utils.Adapter {
                         'value.temperature',
                         '°C',
                     );
-                    await this.ensureState(`${channel}.precipitation`, 'Precipitation', 'number', 'value', 'mm');
+                    await this.ensureState(
+                        `${channel}.precipitation`,
+                        'Precipitation',
+                        'number',
+                        'value.precipitation',
+                        'mm',
+                    );
                 }
 
                 const offset = (day * 24 + hour) * 3600 * 1000;
@@ -336,15 +360,230 @@ class MeteoSwiss extends utils.Adapter {
         }
     }
 
-    private async updateStation(station: string, firstRun: boolean): Promise<void> {
-        this.log.debug(`Updating ${station}`);
+    /**
+     * We used short variable names here to make the code below as short as possible.
+     *
+     * @param s The station ID.
+     * @param m The measurements at the station.
+     * @param f Flag to know if we should create states.
+     */
+    private async updateStation(s: string, m: Rest.StationMeasurements, f: boolean): Promise<void> {
+        this.log.debug(`Updating ${s}`);
+
+        await this.updateValueTime(
+            s,
+            m.temperatureMin,
+            'temperatureMin',
+            'Temperature Min',
+            'value.temperature',
+            '°C',
+            f,
+        );
+        await this.updateValueTime(
+            s,
+            m.temperatureMax,
+            'temperatureMax',
+            'Temperature Max',
+            'value.temperature',
+            '°C',
+            f,
+        );
+
+        await this.updateMsmt(s, m.sunshineTotal, 'sunshineTotal', 'Sunshine Total', 'value', 'min', f);
+        await this.updateMsmt(s, m.sunshineYesterday, 'sunshineYesterday', 'Sunshine Yesterday', 'value', 'min', f);
+        await this.updateMsmt(
+            s,
+            m.precipitation1H,
+            'precipitation1H',
+            'Precipitation 1 Hour',
+            'value.precipitation',
+            'mm',
+            f,
+        );
+        await this.updateMsmt(
+            s,
+            m.precipitationYesterday,
+            'precipitationYesterday',
+            'Precipitation Yesterday',
+            'value.precipitation',
+            'mm',
+            f,
+        );
+        await this.updateMsmt(
+            s,
+            m.precipitation24H,
+            'precipitation24H',
+            'Precipitation 24 Hours',
+            'value.precipitation',
+            'mm',
+            f,
+        );
+        await this.updateMsmt(
+            s,
+            m.precipitation48H,
+            'precipitation48H',
+            'Precipitation 48 Hours',
+            'value.precipitation',
+            'mm',
+            f,
+        );
+        await this.updateMsmt(
+            s,
+            m.precipitation72H,
+            'precipitation72H',
+            'Precipitation 72 Hours',
+            'value.precipitation',
+            'mm',
+            f,
+        );
+
+        await this.updateValueTime(s, m.windGustMax, 'windGustMax', 'Wind Gust Max', 'value.speed.wind', 'km/h', f);
+
+        await this.updateMsmt(
+            s,
+            m.pressureDifference3H,
+            'pressureDifference3H',
+            'Pressure Difference 3 Hours',
+            'value.pressure',
+            'hPa',
+            f,
+        );
+        await this.updateMsmt(s, m.pressure850, 'pressure850', 'Pressure 850', 'value.pressure', 'hPa', f);
+        await this.updateMsmt(s, m.pressure700, 'pressure700', 'Pressure 700', 'value.pressure', 'hPa', f);
+
+        await this.updateMsmt(s, m.snow2D, 'snow2D', 'Snow 2 Days', 'value', 'cm', f);
+        await this.updateMsmt(s, m.snow3D, 'snow3D', 'Snow 3 Days', 'value', 'cm', f);
+
+        await this.updateMsmt(s, m.dewPoint, 'dewPoint', 'Dew Point', 'value.temperature', '°C', f);
+
+        await this.updateMsmt(s, m.windSpeed, 'windSpeed', 'Wind Speed', 'value.speed.wind', 'km/h', f);
+
+        await this.updateMsmt(s, m.precipitation, 'precipitation', 'Precipitation', 'value.precipitation', 'mm', f);
+        await this.updateMsmt(s, m.humidity, 'humidity', 'Humidity', 'value.humidity', '%', f);
+
+        await this.updateMsmt(
+            s,
+            m.pressureSea,
+            'pressureSea',
+            'Pressure reduced to sea level (QFF)',
+            'value.pressure',
+            'hPa',
+            f,
+        );
+        await this.updateMsmt(
+            s,
+            m.pressureStandard,
+            'pressureStandard',
+            'Pressure with standard atmosphere (QNH)',
+            'value.pressure',
+            'hPa',
+            f,
+        );
+        await this.updateMsmt(
+            s,
+            m.pressureStation,
+            'pressureStation',
+            'Pressure at station (QFE)',
+            'value.pressure',
+            'hPa',
+            f,
+        );
+
+        await this.updateMsmt(s, m.windDirection, 'windDirection', 'Wind Direction', 'value.direction.wind', '°', f);
+        await this.updateMsmt(s, m.windGust, 'windGust', 'Wind Gust', 'value.speed.wind', 'km/h', f);
+
+        await this.updateValueTime(
+            s,
+            { timestamp: m.snowTime, value: m.snowNew },
+            'snowNew',
+            'Snow New',
+            'value',
+            'cm',
+            f,
+        );
+        await this.updateValueTime(
+            s,
+            { timestamp: m.snowTime, value: m.snowTotal },
+            'snowTotal',
+            'Snow Total',
+            'value',
+            'cm',
+            f,
+        );
+
+        await this.updateMsmt(s, m.temperature, 'temperature', 'Temperature', 'value.temperature', '°C', f);
+
+        f && (await this.ensureState(`${s}.smnTime`, 'Time', 'string', 'date'));
+        await this.updateValue(`${s}.smnTime`, toDateStr(m.smnTime));
+
+        await this.updateMsmt(s, m.sunshine, 'sunshine', 'Sunshine', 'value', 'min', f);
+
+        await this.updateValueTime(
+            s,
+            { timestamp: m.foehnTime, value: m.foehn },
+            'foehn',
+            'Foehn-Index',
+            'value',
+            'cm',
+            f,
+        );
+    }
+
+    private async updateValueTime(
+        station: string,
+        tuple:
+            | {
+                  value?: number;
+                  timestamp?: number;
+              }
+            | undefined,
+        id: string,
+        name: string,
+        role: string,
+        unit: string | undefined,
+        firstRun: boolean,
+    ): Promise<void> {
+        if (!tuple?.timestamp) {
+            return;
+        }
+        const channel = `${station}.${id}`;
+        if (firstRun) {
+            await this.ensureChannel(channel, name);
+            await this.ensureState(`${channel}.time`, 'Time', 'string', 'date');
+            await this.ensureState(`${channel}.value`, name, 'number', role, unit);
+        }
+
+        await this.updateValue(`${channel}.time`, toDateStr(tuple.timestamp));
+        await this.updateValue(`${channel}.value`, toNumber(tuple.value));
+    }
+
+    private async updateMsmt(
+        station: string,
+        value: number | undefined,
+        id: string,
+        name: string,
+        role: string,
+        unit: string | undefined,
+        firstRun: boolean,
+    ): Promise<void> {
+        if (value === undefined) {
+            return;
+        }
+
+        const fullId = `${station}.${id}`;
+
+        if (firstRun) {
+            await this.ensureState(fullId, name, 'number', role, unit);
+        }
+
+        await this.updateValue(fullId, toNumber(value));
     }
 
     private async downloadJson<T>(filename: string, isStaticResource: boolean): Promise<T> {
         const url = `${isStaticResource ? STATIC_BASE_URL : DYNAMIC_BASE_URL}${filename}`;
         this.log.debug(`Downloading ${url}`);
         const response = await this.axios.get<T>(url);
-        this.log.debug(`Received ${JSON.stringify(response.data)}`);
+        // this.log.silly(`Received ${JSON.stringify(response.data)}`);
         return response.data;
     }
 

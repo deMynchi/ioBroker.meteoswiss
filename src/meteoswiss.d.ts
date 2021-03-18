@@ -6,7 +6,7 @@ export namespace Rest {
         timestamp: number;
     }
 
-    export interface CurrentWeather {
+    export interface CurrentPlzWeather {
         time: number;
         icon: number;
         temperature: number;
@@ -58,11 +58,58 @@ export namespace Rest {
     }
 
     export interface PlzDetail {
-        currentWeather: CurrentWeather;
+        currentWeather: CurrentPlzWeather;
         forecast: Forecast[];
         warnings: Warning[];
         warningsOverview: WarningsOverview[];
         graph: Graph;
+    }
+
+    export interface ValueTime {
+        value: number;
+        timestamp: number;
+    }
+
+    export interface StationMeasurements {
+        temperatureMin?: ValueTime;
+        temperatureMax?: ValueTime;
+        sunshineTotal?: number;
+        sunshineYesterday?: number;
+        precipitation1H?: number;
+        precipitationYesterday?: number;
+        precipitation24H?: number;
+        precipitation48H?: number;
+        precipitation72H?: number;
+        windGustMax?: ValueTime;
+        pressureDifference3H?: number;
+        pressure850?: number;
+        pressure700?: number;
+        snow2D?: number;
+        snow3D?: number;
+        dewPoint?: number;
+        windSpeed?: number;
+        precipitation?: number;
+        humidity?: number;
+        pressureSea?: number;
+        pressureStandard?: number;
+        pressureStation?: number;
+        windDirection?: number;
+        windGust?: number;
+        snowNew?: number;
+        snowTotal?: number;
+        temperature?: number;
+        smnTime?: number;
+        sunshine?: number;
+        snowTime?: number;
+        foehnTime?: number;
+        foehn?: number;
+    }
+
+    export interface CurrentWeather {
+        smnTime: number;
+        foehnTime: number;
+        snowTime: number;
+        data: Record<string, StationMeasurements>;
     }
 }
 
