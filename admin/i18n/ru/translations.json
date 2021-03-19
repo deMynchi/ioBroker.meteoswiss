@@ -1,0 +1,10 @@
+{
+    "Enter a weather station name": "Введите название метеостанции",
+    "Enter a zip code or town": "Введите почтовый индекс или город",
+    "Language": "Язык",
+    "Locations": "Локации",
+    "Weather Stations": "Метеостанции",
+    "add stations": "добавить станции",
+    "add towns": "добавить города",
+    "meteoswiss adapter settings": "Настройки адаптера для meteoswiss"
+}

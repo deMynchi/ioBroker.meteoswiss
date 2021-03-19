@@ -87,7 +87,7 @@ class MeteoSwiss extends utils.Adapter {
                 'User-Agent': USER_AGENT,
             },
         });
-        await this.loadDatabase();
+        await this.ensureDatabase();
         await this.createObjects();
     }
     /**
@@ -106,42 +106,64 @@ class MeteoSwiss extends utils.Adapter {
      * Some message was sent to this instance over message box. Used by email, pushover, text2speech, ...
      * Using this method requires "common.messagebox" property to be set to true in io-package.json
      */
-    onMessage(obj) {
-        if (typeof obj === 'object' && obj.message) {
-            if (obj.command === 'send') {
-                // e.g. send email or pushover or whatever
-                this.log.info('send command');
-                // Send response in callback if required
-                if (obj.callback)
-                    this.sendTo(obj.from, obj.command, 'Message received', obj.callback);
-            }
+    onMessage(msg) {
+        // this.log.info('onMessage() :' + JSON.stringify(msg));
+        if (typeof msg === 'object' &&
+            msg.command === 'getData' &&
+            msg.callback &&
+            msg.from &&
+            msg.from.startsWith('system.adapter.admin')) {
+            this.handleGetDataMessage()
+                .then((response) => this.sendTo(msg.from, msg.command, response, msg.callback))
+                .catch((e) => {
+                this.log.warn(`Couldn't handle getData message: ${e}`);
+                this.sendTo(msg.from, msg.command, { error: e || 'No data' }, msg.callback);
+            });
         }
     }
-    async loadDatabase() {
+    async handleGetDataMessage() {
+        await this.ensureDatabase();
+        const plzs = await this.database.all('SELECT plz_pk, primary_name FROM plz');
+        const weatherstations = await this.database.all('SELECT station_pk, name FROM wetterstation');
+        return {
+            data: {
+                zips: plzs.reduce(function (map, row) {
+                    map[row.plz_pk] = row.primary_name;
+                    return map;
+                }, {}),
+                stations: weatherstations.reduce(function (map, row) {
+                    map[row.station_pk] = row.name;
+                    return map;
+                }, {}),
+            },
+        };
+    }
+    async ensureDatabase() {
         const baseDir = utils.getAbsoluteInstanceDataDir(this);
         await fs_extra_1.ensureDir(baseDir);
         const filename = path_1.default.join(baseDir, 'db.sqlite');
         try {
-            await this.openDatabase(filename);
+            if (!this.database) {
+                await this.openDatabase(filename);
+            }
             const info = await this.downloadJson('dbinfo.json', true);
             const metadata = await this.database.get('SELECT * FROM metadata');
             if (metadata && info.dbVersion.toString() === metadata.version) {
                 return;
             }
             this.log.debug(`Outdated local database: ${metadata === null || metadata === void 0 ? void 0 : metadata.version} <> ${info.dbVersion}`);
-            await this.database.close();
         }
         catch (error) {
             this.log.debug(`Couldn't open local database ${filename}: ${error}`);
+        }
+        if (this.database) {
+            await this.database.close();
         }
         // download the database
         await this.downloadFile('db.sqlite', filename);
         await this.openDatabase(filename);
     }
     async openDatabase(filename) {
-        if (this.database) {
-            await this.database.close();
-        }
         this.database = await sqlite_1.open({
             filename: filename,
             driver: sqlite3_1.default.cached.Database,

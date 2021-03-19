@@ -46,6 +46,14 @@ function minutes(minutes: number): number {
     return minutes * 60 * 1000;
 }
 
+interface GetDataResponse {
+    error?: any;
+    data?: {
+        zips: Record<number, string>;
+        stations: Record<string, string>;
+    };
+}
+
 class MeteoSwiss extends utils.Adapter {
     private axios!: AxiosInstance;
     private database!: Database<sqlite3.Database, sqlite3.Statement>;
@@ -79,7 +87,7 @@ class MeteoSwiss extends utils.Adapter {
             },
         });
 
-        await this.loadDatabase();
+        await this.ensureDatabase();
 
         await this.createObjects();
     }
@@ -102,24 +110,55 @@ class MeteoSwiss extends utils.Adapter {
      * Some message was sent to this instance over message box. Used by email, pushover, text2speech, ...
      * Using this method requires "common.messagebox" property to be set to true in io-package.json
      */
-    private onMessage(obj: ioBroker.Message): void {
-        if (typeof obj === 'object' && obj.message) {
-            if (obj.command === 'send') {
-                // e.g. send email or pushover or whatever
-                this.log.info('send command');
-                // Send response in callback if required
-                if (obj.callback) this.sendTo(obj.from, obj.command, 'Message received', obj.callback);
-            }
+    private onMessage(msg: ioBroker.Message): void {
+        // this.log.info('onMessage() :' + JSON.stringify(msg));
+        if (
+            typeof msg === 'object' &&
+            msg.command === 'getData' &&
+            msg.callback &&
+            msg.from &&
+            msg.from.startsWith('system.adapter.admin')
+        ) {
+            this.handleGetDataMessage()
+                .then((response) => this.sendTo(msg.from, msg.command, response, msg.callback))
+                .catch((e) => {
+                    this.log.warn(`Couldn't handle getData message: ${e}`);
+                    this.sendTo(msg.from, msg.command, { error: e || 'No data' }, msg.callback);
+                });
         }
     }
 
-    private async loadDatabase(): Promise<void> {
+    private async handleGetDataMessage(): Promise<GetDataResponse> {
+        await this.ensureDatabase();
+
+        const plzs = await this.database.all<Db.Plz[]>('SELECT plz_pk, primary_name FROM plz');
+        const weatherstations = await this.database.all<Db.Wetterstation[]>(
+            'SELECT station_pk, name FROM wetterstation',
+        );
+
+        return {
+            data: {
+                zips: plzs.reduce<Record<number, string>>(function (map, row) {
+                    map[row.plz_pk] = row.primary_name;
+                    return map;
+                }, {}),
+                stations: weatherstations.reduce<Record<string, string>>(function (map, row) {
+                    map[row.station_pk] = row.name;
+                    return map;
+                }, {}),
+            },
+        };
+    }
+
+    private async ensureDatabase(): Promise<void> {
         const baseDir = utils.getAbsoluteInstanceDataDir(this);
         await ensureDir(baseDir);
 
         const filename = path.join(baseDir, 'db.sqlite');
         try {
-            await this.openDatabase(filename);
+            if (!this.database) {
+                await this.openDatabase(filename);
+            }
 
             const info = await this.downloadJson<Rest.DbInfo>('dbinfo.json', true);
 
@@ -129,9 +168,12 @@ class MeteoSwiss extends utils.Adapter {
             }
 
             this.log.debug(`Outdated local database: ${metadata?.version} <> ${info.dbVersion}`);
-            await this.database.close();
         } catch (error) {
             this.log.debug(`Couldn't open local database ${filename}: ${error}`);
+        }
+
+        if (this.database) {
+            await this.database.close();
         }
 
         // download the database
@@ -140,10 +182,6 @@ class MeteoSwiss extends utils.Adapter {
     }
 
     private async openDatabase(filename: string): Promise<void> {
-        if (this.database) {
-            await this.database.close();
-        }
-
         this.database = await open({
             filename: filename,
             driver: sqlite3.cached.Database,

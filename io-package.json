@@ -41,8 +41,14 @@
             "pl": "Provides weather information from MeteoSwiss",
             "zh-cn": "Provides weather information from MeteoSwiss"
         },
-        "authors": ["deMynchi <nobody@world.com>"],
-        "keywords": ["weather", "meteo", "switzerland"],
+        "authors": [
+            "deMynchi <nobody@world.com>"
+        ],
+        "keywords": [
+            "weather",
+            "meteo",
+            "switzerland"
+        ],
         "license": "MIT",
         "platform": "Javascript/Node.js",
         "main": "build/main.js",

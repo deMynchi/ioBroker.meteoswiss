@@ -1,0 +1,10 @@
+{
+    "Enter a weather station name": "Ingrese un nombre de estación meteorológica",
+    "Enter a zip code or town": "Ingrese un código postal o ciudad",
+    "Language": "Idioma",
+    "Locations": "Ubicaciones",
+    "Weather Stations": "Estaciones meteorológicas",
+    "add stations": "agregar estaciones",
+    "add towns": "agregar ciudades",
+    "meteoswiss adapter settings": "Ajustes del adaptador para meteoswiss"
+}
