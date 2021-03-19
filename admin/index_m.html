@@ -38,12 +38,14 @@
                 getIsAdapterAlive((alive) => {
                     if (!alive) {
                         showError(_('Adapter must be running to configure it.'));
+                        $('.progress').addClass('hide');
                         return;
                     }
 
                     sendTo(null, 'getData', '', (response) => {
                         if (response.error) {
                             showError(response.error);
+                            $('.progress').addClass('hide');
                             return;
                         }
 
