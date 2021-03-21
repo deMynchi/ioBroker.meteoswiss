@@ -14,7 +14,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com:deMynchi/ioBroker.meteoswiss.git"
+    "url": "git+https://github.com/deMynchi/ioBroker.meteoswiss.git"
   },
   "dependencies": {
     "@iobroker/adapter-core": "^2.4.0",
