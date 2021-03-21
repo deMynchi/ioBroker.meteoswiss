@@ -17,7 +17,12 @@ Provides weather information from MeteoSwiss
 
 ## Changelog
 
-### 0.0.1
+<!--
+	Placeholder for the next version (at the beginning of the line):
+	### __WORK IN PROGRESS__
+-->
+
+### __WORK IN PROGRESS__
 
 -   (deMynchi) initial release
 
@@ -25,7 +30,7 @@ Provides weather information from MeteoSwiss
 
 MIT License
 
-Copyright (c) 2021 deMynchi <nobody@world.com>
+Copyright (c) 2021 deMynchi
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
