@@ -22,6 +22,10 @@ Provides weather information from MeteoSwiss
 	### __WORK IN PROGRESS__
 -->
 
+### __WORK IN PROGRESS__
+
+-   (deMynchi) Fixed connection state always yellow.
+
 ### 0.1.1 (2021-03-22)
 
 -   (deMynchi) Fixed initial download of sqlite db that was broken

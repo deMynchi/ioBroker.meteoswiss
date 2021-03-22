@@ -211,6 +211,7 @@ class MeteoSwiss extends utils.Adapter {
             }
         }
         await this.updateStates(true);
+        await this.setStateAsync('info.connection', true, true);
     }
     async updateStates(firstRun) {
         let timeout = 0;

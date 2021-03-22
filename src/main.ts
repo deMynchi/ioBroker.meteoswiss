@@ -232,6 +232,8 @@ class MeteoSwiss extends utils.Adapter {
         }
 
         await this.updateStates(true);
+
+        await this.setStateAsync('info.connection', true, true);
     }
 
     private async updateStates(firstRun: boolean): Promise<void> {
