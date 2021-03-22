@@ -1,8 +1,20 @@
 {
     "common": {
         "name": "meteoswiss",
-        "version": "0.1.1",
+        "version": "0.1.2",
         "news": {
+            "0.1.2": {
+                "en": "Fixed connection state always yellow.",
+                "de": "Fester Verbindungsstatus immer gelb.",
+                "ru": "Состояние фиксированного соединения всегда желтое.",
+                "pt": "Estado de conexão fixa sempre amarelo.",
+                "nl": "Vaste verbindingsstatus altijd geel.",
+                "fr": "État de connexion fixe toujours jaune.",
+                "it": "Stato di connessione fisso sempre giallo.",
+                "es": "Estado de conexión fija siempre amarillo.",
+                "pl": "Stały stan połączenia zawsze żółty.",
+                "zh-cn": "固定连接状态始终为黄色。"
+            },
             "0.1.1": {
                 "en": "Fixed initial download of sqlite db that was broken",
                 "de": "Der erste Download von SQLite-Datenbank, der fehlerhaft war, wurde behoben",

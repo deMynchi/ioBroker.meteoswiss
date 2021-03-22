@@ -22,7 +22,7 @@ Provides weather information from MeteoSwiss
 	### __WORK IN PROGRESS__
 -->
 
-### __WORK IN PROGRESS__
+### 0.1.2 (2021-03-22)
 
 -   (deMynchi) Fixed connection state always yellow.
 
