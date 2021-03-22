@@ -22,7 +22,7 @@ Provides weather information from MeteoSwiss
 	### __WORK IN PROGRESS__
 -->
 
-### __WORK IN PROGRESS__
+### 0.1.1 (2021-03-22)
 
 -   (deMynchi) Fixed initial download of sqlite db that was broken
 
