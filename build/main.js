@@ -100,7 +100,7 @@ class MeteoSwiss extends utils.Adapter {
         if (this.refreshTimer) {
             clearTimeout(this.refreshTimer);
         }
-        await this.database.close();
+        await this.closeDatabase();
     }
     /**
      * Some message was sent to this instance over message box. Used by email, pushover, text2speech, ...
@@ -149,6 +149,7 @@ class MeteoSwiss extends utils.Adapter {
             const info = await this.downloadJson('dbinfo.json', true);
             const metadata = await this.database.get('SELECT * FROM metadata');
             if (metadata && info.dbVersion.toString() === metadata.version) {
+                this.log.debug(`Database ready: ${metadata === null || metadata === void 0 ? void 0 : metadata.version}`);
                 return;
             }
             this.log.debug(`Outdated local database: ${metadata === null || metadata === void 0 ? void 0 : metadata.version} <> ${info.dbVersion}`);
@@ -156,18 +157,27 @@ class MeteoSwiss extends utils.Adapter {
         catch (error) {
             this.log.debug(`Couldn't open local database ${filename}: ${error}`);
         }
-        if (this.database) {
-            await this.database.close();
-        }
         // download the database
+        await this.closeDatabase();
         await this.downloadFile('db.sqlite', filename);
         await this.openDatabase(filename);
+        this.log.debug(`Database ready`);
     }
     async openDatabase(filename) {
         this.database = await sqlite_1.open({
             filename: filename,
             driver: sqlite3_1.default.cached.Database,
         });
+    }
+    async closeDatabase() {
+        if (this.database) {
+            try {
+                await this.database.close();
+            }
+            catch (error) {
+                this.log.debug(`Couldn't close database: ${error}`);
+            }
+        }
     }
     async createObjects() {
         for (let i = this.config.zips.length - 1; i >= 0; i--) {
@@ -391,9 +401,10 @@ class MeteoSwiss extends utils.Adapter {
         return response.data;
     }
     async downloadFile(srcUrl, destPath) {
-        this.log.debug(`Downloading ${STATIC_BASE_URL}${srcUrl}`);
+        const url = `${STATIC_BASE_URL}${srcUrl}`;
+        this.log.debug(`Downloading file ${url} to ${destPath}`);
         const writer = fs_extra_1.createWriteStream(destPath);
-        const response = await this.axios.get(srcUrl, {
+        const response = await this.axios.get(url, {
             responseType: 'stream',
         });
         response.data.pipe(writer);

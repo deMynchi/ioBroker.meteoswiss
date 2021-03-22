@@ -103,7 +103,7 @@ class MeteoSwiss extends utils.Adapter {
         if (this.refreshTimer) {
             clearTimeout(this.refreshTimer);
         }
-        await this.database.close();
+        await this.closeDatabase();
     }
 
     /**
@@ -164,6 +164,7 @@ class MeteoSwiss extends utils.Adapter {
 
             const metadata = await this.database.get<Db.Metadata>('SELECT * FROM metadata');
             if (metadata && info.dbVersion.toString() === metadata.version) {
+                this.log.debug(`Database ready: ${metadata?.version}`);
                 return;
             }
 
@@ -172,13 +173,11 @@ class MeteoSwiss extends utils.Adapter {
             this.log.debug(`Couldn't open local database ${filename}: ${error}`);
         }
 
-        if (this.database) {
-            await this.database.close();
-        }
-
         // download the database
+        await this.closeDatabase();
         await this.downloadFile('db.sqlite', filename);
         await this.openDatabase(filename);
+        this.log.debug(`Database ready`);
     }
 
     private async openDatabase(filename: string): Promise<void> {
@@ -186,6 +185,16 @@ class MeteoSwiss extends utils.Adapter {
             filename: filename,
             driver: sqlite3.cached.Database,
         });
+    }
+
+    private async closeDatabase(): Promise<void> {
+        if (this.database) {
+            try {
+                await this.database.close();
+            } catch (error) {
+                this.log.debug(`Couldn't close database: ${error}`);
+            }
+        }
     }
 
     private async createObjects(): Promise<void> {
@@ -650,10 +659,11 @@ class MeteoSwiss extends utils.Adapter {
     }
 
     private async downloadFile(srcUrl: string, destPath: string): Promise<void> {
-        this.log.debug(`Downloading ${STATIC_BASE_URL}${srcUrl}`);
+        const url = `${STATIC_BASE_URL}${srcUrl}`;
+        this.log.debug(`Downloading file ${url} to ${destPath}`);
         const writer = createWriteStream(destPath);
 
-        const response = await this.axios.get(srcUrl, {
+        const response = await this.axios.get(url, {
             responseType: 'stream',
         });
 
