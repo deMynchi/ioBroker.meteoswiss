@@ -22,6 +22,10 @@ Provides weather information from MeteoSwiss
 	### __WORK IN PROGRESS__
 -->
 
+### **WORK IN PROGRESS**
+
+-   (deMynchi) Added warnings for PLZ entries.
+
 ### 0.1.2 (2021-03-22)
 
 -   (deMynchi) Fixed connection state always yellow.
@@ -29,7 +33,6 @@ Provides weather information from MeteoSwiss
 ### 0.1.1 (2021-03-22)
 
 -   (deMynchi) Fixed initial download of sqlite db that was broken
-
 
 ### 0.1.0 (2021-03-21)
 

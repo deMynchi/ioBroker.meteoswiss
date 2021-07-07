@@ -36,14 +36,28 @@ const sqlite3_1 = __importDefault(require("sqlite3"));
 const STATIC_BASE_URL = 'https://s3-eu-central-1.amazonaws.com/app-prod-static-fra.meteoswiss-app.ch/v1/';
 const DYNAMIC_BASE_URL = 'https://app-prod-ws.meteoswiss-app.ch/v1/';
 const USER_AGENT = 'Android-30 ch.admin.meteoswiss-2410';
-const ICON_URL_FORMAT = 'https://cdn.jsdelivr.net/npm/meteo-icons/icons/weathericon_%s.png';
+const WEATHER_ICON_URL_FORMAT = 'https://cdn.jsdelivr.net/npm/meteo-icons/icons/weathericon_%s.png';
+const WARNING_ICON_URL_FORMAT = 'https://cdn.jsdelivr.net/npm/meteo-icons/icons/bulletinwebicon_type%s_level%s.png';
+const WARNING_NAMES = {
+    '0': 'Wind',
+    '1': 'Thunderstorm',
+    '2': 'Rain',
+    '3': 'Snow',
+    '4': 'Icy Roads',
+    '5': 'Cold',
+    '7': 'Hot',
+    '8': 'Avalanche',
+    '9': 'Earthquake',
+    '10': 'Forest Fire',
+    '11': 'Flooding',
+};
 function toDateStr(timestamp) {
     return timestamp ? new Date(timestamp).toISOString() : undefined;
 }
 function toNumber(value) {
     return value === 32767 ? undefined : value;
 }
-function toIconUrl(icon) {
+function toWeatherIconUrl(icon) {
     if (icon === undefined) {
         return undefined;
     }
@@ -51,7 +65,7 @@ function toIconUrl(icon) {
     while (num.length < 3) {
         num = '0' + num;
     }
-    return ICON_URL_FORMAT.replace('%s', num);
+    return WEATHER_ICON_URL_FORMAT.replace('%s', num);
 }
 /**
  * Converts minutes to milliseconds for better readability.
@@ -258,7 +272,7 @@ class MeteoSwiss extends utils.Adapter {
         }
         await this.updateValue(`${zip}.currentWeather.time`, toDateStr(detail.currentWeather.time));
         await this.updateValue(`${zip}.currentWeather.icon`, detail.currentWeather.icon);
-        await this.updateValue(`${zip}.currentWeather.iconUrl`, toIconUrl(detail.currentWeather.icon));
+        await this.updateValue(`${zip}.currentWeather.iconUrl`, toWeatherIconUrl(detail.currentWeather.icon));
         await this.updateValue(`${zip}.currentWeather.temperature`, detail.currentWeather.temperature);
         // forecast (6 days per day)
         for (let day = 0; day < 6; day++) {
@@ -275,7 +289,7 @@ class MeteoSwiss extends utils.Adapter {
             const forecast = detail.forecast[day];
             await this.updateValue(`${channel}.date`, forecast === null || forecast === void 0 ? void 0 : forecast.dayDate);
             await this.updateValue(`${channel}.icon`, forecast === null || forecast === void 0 ? void 0 : forecast.iconDay);
-            await this.updateValue(`${channel}.iconUrl`, toIconUrl(forecast === null || forecast === void 0 ? void 0 : forecast.iconDay));
+            await this.updateValue(`${channel}.iconUrl`, toWeatherIconUrl(forecast === null || forecast === void 0 ? void 0 : forecast.iconDay));
             await this.updateValue(`${channel}.temperatureMax`, forecast === null || forecast === void 0 ? void 0 : forecast.temperatureMax);
             await this.updateValue(`${channel}.temperatureMin`, forecast === null || forecast === void 0 ? void 0 : forecast.temperatureMin);
             await this.updateValue(`${channel}.precipitation`, forecast === null || forecast === void 0 ? void 0 : forecast.precipitation);
@@ -307,7 +321,7 @@ class MeteoSwiss extends utils.Adapter {
                 await this.updateValue(`${channel}.time`, toDateStr(now));
                 const icon = detail.graph.weatherIcon3h[index3h];
                 await this.updateValue(`${channel}.icon`, icon);
-                await this.updateValue(`${channel}.iconUrl`, toIconUrl(icon));
+                await this.updateValue(`${channel}.iconUrl`, toWeatherIconUrl(icon));
                 await this.updateValue(`${channel}.windDirection`, detail.graph.windDirection3h[index3h]);
                 await this.updateValue(`${channel}.windSpeed`, detail.graph.windSpeed3h[index3h]);
                 await this.updateValue(`${channel}.temperatureMin`, Math.min(...detail.graph.temperatureMin1h.slice(index1h, index1h + 3)));
@@ -328,6 +342,45 @@ class MeteoSwiss extends utils.Adapter {
                 }
                 await this.updateValue(`${channel}.precipitation`, (precipitationSum / 18) * 3);
             }
+        }
+        // warnings
+        for (const typeId of Object.keys(WARNING_NAMES)) {
+            const channel = `${zip}.warning-${typeId.padStart(2, '0')}`;
+            await this.ensureChannel(channel, WARNING_NAMES[typeId]);
+            await this.ensureState(`${channel}.level`, 'Level', 'number', 'value', undefined, {
+                0: 'None',
+                1: 'Minimal',
+                2: 'Low',
+                3: 'Medium',
+                4: 'High',
+                5: 'Severe',
+            });
+            await this.ensureState(`${channel}.iconUrl`, 'Icon URL', 'string', 'text.url');
+            await this.ensureState(`${channel}.text`, 'Text', 'string', 'text');
+            await this.ensureState(`${channel}.html`, 'HTML', 'string', 'html');
+            await this.ensureState(`${channel}.validFrom`, 'Valid from', 'string', 'date');
+            await this.ensureState(`${channel}.validTo`, 'Valid to', 'string', 'date');
+            await this.ensureState(`${channel}.outlook`, 'Is outlook', 'boolean', 'indicator');
+            let warning;
+            const warnings = detail.warnings.filter((w) => w.warnType.toString() === typeId);
+            if (warnings.length === 1) {
+                warning = warnings[0];
+            }
+            else if (warnings.length > 1) {
+                warning = detail.warnings.find((w) => !w.outlook);
+                if (!warning) {
+                    warning = warnings.sort((a, b) => { var _a, _b; return ((_a = a.validFrom) !== null && _a !== void 0 ? _a : 0) - ((_b = b.validFrom) !== null && _b !== void 0 ? _b : 0); })[0];
+                }
+            }
+            await this.updateValue(`${channel}.level`, (warning === null || warning === void 0 ? void 0 : warning.warnLevel) || 0);
+            await this.updateValue(`${channel}.iconUrl`, warning
+                ? WARNING_ICON_URL_FORMAT.replace('%s', typeId).replace('%s', warning.warnLevel.toString())
+                : null);
+            await this.updateValue(`${channel}.text`, warning === null || warning === void 0 ? void 0 : warning.text);
+            await this.updateValue(`${channel}.html`, warning === null || warning === void 0 ? void 0 : warning.htmlText);
+            await this.updateValue(`${channel}.validFrom`, toDateStr(warning === null || warning === void 0 ? void 0 : warning.validFrom));
+            await this.updateValue(`${channel}.validTo`, toDateStr(warning === null || warning === void 0 ? void 0 : warning.validTo));
+            await this.updateValue(`${channel}.outlook`, warning === null || warning === void 0 ? void 0 : warning.outlook);
         }
     }
     /**
@@ -432,7 +485,7 @@ class MeteoSwiss extends utils.Adapter {
             native: {},
         });
     }
-    async ensureState(id, name, type, role, unit) {
+    async ensureState(id, name, type, role, unit, states) {
         await this.setObjectNotExistsAsync(id, {
             type: 'state',
             common: {
@@ -440,6 +493,7 @@ class MeteoSwiss extends utils.Adapter {
                 type,
                 role,
                 unit,
+                states,
                 read: true,
                 write: false,
             },

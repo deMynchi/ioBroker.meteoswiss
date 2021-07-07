@@ -15,7 +15,22 @@ import { Db, Rest } from './meteoswiss';
 const STATIC_BASE_URL = 'https://s3-eu-central-1.amazonaws.com/app-prod-static-fra.meteoswiss-app.ch/v1/';
 const DYNAMIC_BASE_URL = 'https://app-prod-ws.meteoswiss-app.ch/v1/';
 const USER_AGENT = 'Android-30 ch.admin.meteoswiss-2410';
-const ICON_URL_FORMAT = 'https://cdn.jsdelivr.net/npm/meteo-icons/icons/weathericon_%s.png';
+const WEATHER_ICON_URL_FORMAT = 'https://cdn.jsdelivr.net/npm/meteo-icons/icons/weathericon_%s.png';
+const WARNING_ICON_URL_FORMAT = 'https://cdn.jsdelivr.net/npm/meteo-icons/icons/bulletinwebicon_type%s_level%s.png';
+
+const WARNING_NAMES: Readonly<Record<string, string>> = {
+    '0': 'Wind',
+    '1': 'Thunderstorm',
+    '2': 'Rain',
+    '3': 'Snow',
+    '4': 'Icy Roads',
+    '5': 'Cold',
+    '7': 'Hot',
+    '8': 'Avalanche',
+    '9': 'Earthquake',
+    '10': 'Forest Fire',
+    '11': 'Flooding',
+};
 
 function toDateStr(timestamp: number | undefined): string | undefined {
     return timestamp ? new Date(timestamp).toISOString() : undefined;
@@ -25,7 +40,7 @@ function toNumber(value?: number): number | undefined {
     return value === 32767 ? undefined : value;
 }
 
-function toIconUrl(icon?: number): string | undefined {
+function toWeatherIconUrl(icon?: number): string | undefined {
     if (icon === undefined) {
         return undefined;
     }
@@ -33,7 +48,7 @@ function toIconUrl(icon?: number): string | undefined {
     while (num.length < 3) {
         num = '0' + num;
     }
-    return ICON_URL_FORMAT.replace('%s', num);
+    return WEATHER_ICON_URL_FORMAT.replace('%s', num);
 }
 
 /**
@@ -297,7 +312,7 @@ class MeteoSwiss extends utils.Adapter {
 
         await this.updateValue(`${zip}.currentWeather.time`, toDateStr(detail.currentWeather.time));
         await this.updateValue(`${zip}.currentWeather.icon`, detail.currentWeather.icon);
-        await this.updateValue(`${zip}.currentWeather.iconUrl`, toIconUrl(detail.currentWeather.icon));
+        await this.updateValue(`${zip}.currentWeather.iconUrl`, toWeatherIconUrl(detail.currentWeather.icon));
         await this.updateValue(`${zip}.currentWeather.temperature`, detail.currentWeather.temperature);
 
         // forecast (6 days per day)
@@ -334,7 +349,7 @@ class MeteoSwiss extends utils.Adapter {
             const forecast = detail.forecast[day];
             await this.updateValue(`${channel}.date`, forecast?.dayDate);
             await this.updateValue(`${channel}.icon`, forecast?.iconDay);
-            await this.updateValue(`${channel}.iconUrl`, toIconUrl(forecast?.iconDay));
+            await this.updateValue(`${channel}.iconUrl`, toWeatherIconUrl(forecast?.iconDay));
             await this.updateValue(`${channel}.temperatureMax`, forecast?.temperatureMax);
             await this.updateValue(`${channel}.temperatureMin`, forecast?.temperatureMin);
             await this.updateValue(`${channel}.precipitation`, forecast?.precipitation);
@@ -399,7 +414,7 @@ class MeteoSwiss extends utils.Adapter {
 
                 const icon = detail.graph.weatherIcon3h[index3h];
                 await this.updateValue(`${channel}.icon`, icon);
-                await this.updateValue(`${channel}.iconUrl`, toIconUrl(icon));
+                await this.updateValue(`${channel}.iconUrl`, toWeatherIconUrl(icon));
                 await this.updateValue(`${channel}.windDirection`, detail.graph.windDirection3h[index3h]);
                 await this.updateValue(`${channel}.windSpeed`, detail.graph.windSpeed3h[index3h]);
 
@@ -430,6 +445,50 @@ class MeteoSwiss extends utils.Adapter {
                 }
                 await this.updateValue(`${channel}.precipitation`, (precipitationSum / 18) * 3);
             }
+        }
+
+        // warnings
+        for (const typeId of Object.keys(WARNING_NAMES)) {
+            const channel = `${zip}.warning-${typeId.padStart(2, '0')}`;
+            await this.ensureChannel(channel, WARNING_NAMES[typeId]);
+            await this.ensureState(`${channel}.level`, 'Level', 'number', 'value', undefined, {
+                0: 'None',
+                1: 'Minimal',
+                2: 'Low',
+                3: 'Medium',
+                4: 'High',
+                5: 'Severe',
+            });
+            await this.ensureState(`${channel}.iconUrl`, 'Icon URL', 'string', 'text.url');
+            await this.ensureState(`${channel}.text`, 'Text', 'string', 'text');
+            await this.ensureState(`${channel}.html`, 'HTML', 'string', 'html');
+            await this.ensureState(`${channel}.validFrom`, 'Valid from', 'string', 'date');
+            await this.ensureState(`${channel}.validTo`, 'Valid to', 'string', 'date');
+            await this.ensureState(`${channel}.outlook`, 'Is outlook', 'boolean', 'indicator');
+
+            let warning: Rest.Warning | undefined;
+            const warnings = detail.warnings.filter((w) => w.warnType.toString() === typeId);
+            if (warnings.length === 1) {
+                warning = warnings[0];
+            } else if (warnings.length > 1) {
+                warning = detail.warnings.find((w) => !w.outlook);
+                if (!warning) {
+                    warning = warnings.sort((a, b) => (a.validFrom ?? 0) - (b.validFrom ?? 0))[0];
+                }
+            }
+
+            await this.updateValue(`${channel}.level`, warning?.warnLevel || 0);
+            await this.updateValue(
+                `${channel}.iconUrl`,
+                warning
+                    ? WARNING_ICON_URL_FORMAT.replace('%s', typeId).replace('%s', warning.warnLevel.toString())
+                    : null,
+            );
+            await this.updateValue(`${channel}.text`, warning?.text);
+            await this.updateValue(`${channel}.html`, warning?.htmlText);
+            await this.updateValue(`${channel}.validFrom`, toDateStr(warning?.validFrom));
+            await this.updateValue(`${channel}.validTo`, toDateStr(warning?.validTo));
+            await this.updateValue(`${channel}.outlook`, warning?.outlook);
         }
     }
 
@@ -703,6 +762,7 @@ class MeteoSwiss extends utils.Adapter {
         type: ioBroker.CommonType,
         role: string,
         unit?: string,
+        states?: Record<string, string>,
     ): Promise<void> {
         await this.setObjectNotExistsAsync(id, {
             type: 'state',
@@ -711,6 +771,7 @@ class MeteoSwiss extends utils.Adapter {
                 type,
                 role,
                 unit,
+                states,
                 read: true,
                 write: false,
             },

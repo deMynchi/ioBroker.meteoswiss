@@ -29,6 +29,8 @@ export namespace Rest {
         warnType: number;
         warnLevel: number;
         text: string;
+        validFrom?: number;
+        validTo?: number;
         ordering: string;
         htmlText: string;
         outlook: boolean;
