@@ -31,31 +31,84 @@ const utils = __importStar(require("@iobroker/adapter-core"));
 const axios_1 = __importDefault(require("axios"));
 const fs_extra_1 = require("fs-extra");
 const path_1 = __importDefault(require("path"));
+const push_receiver_1 = require("push-receiver");
 const sqlite_1 = require("sqlite");
 const sqlite3_1 = __importDefault(require("sqlite3"));
 const STATIC_BASE_URL = 'https://s3-eu-central-1.amazonaws.com/app-prod-static-fra.meteoswiss-app.ch/v1/';
 const DYNAMIC_BASE_URL = 'https://app-prod-ws.meteoswiss-app.ch/v1/';
 const USER_AGENT = 'Android-30 ch.admin.meteoswiss-2410';
+const GCM_SENDER_ID = '678360867444';
 const WEATHER_ICON_URL_FORMAT = 'https://cdn.jsdelivr.net/npm/meteo-icons/icons/weathericon_%s.png';
 const WARNING_ICON_URL_FORMAT = 'https://cdn.jsdelivr.net/npm/meteo-icons/icons/bulletinwebicon_type%s_level%s.png';
-const WARNING_NAMES = {
-    '0': 'Wind',
-    '1': 'Thunderstorm',
-    '2': 'Rain',
-    '3': 'Snow',
-    '4': 'Icy Roads',
-    '5': 'Cold',
-    '7': 'Hot',
-    '8': 'Avalanche',
-    '9': 'Earthquake',
-    '10': 'Forest Fire',
-    '11': 'Flooding',
-};
+const STATE_ID_GCM = 'info.gcm';
+const STATE_ID_GCM_PERSISTENCE = 'info.gcm-ids';
+const WARNINGS = [
+    {
+        id: 0,
+        name: 'Wind',
+        minimumLevel: 2,
+    },
+    {
+        id: 1,
+        name: 'Thunderstorms',
+        minimumLevel: 3,
+    },
+    {
+        id: 2,
+        name: 'Rain',
+        minimumLevel: 2,
+    },
+    {
+        id: 3,
+        name: 'Snow',
+        minimumLevel: 2,
+    },
+    {
+        id: 4,
+        name: 'Slippery Roads',
+        minimumLevel: 2,
+    },
+    {
+        id: 5,
+        name: 'Frost',
+        minimumLevel: 2,
+    },
+    {
+        id: 7,
+        name: 'Heat Waves',
+        minimumLevel: 3,
+    },
+    {
+        id: 8,
+        name: 'Avalanches',
+        minimumLevel: 2,
+    },
+    {
+        id: 9,
+        name: 'Earthquakes',
+    },
+    {
+        id: 10,
+        name: 'Forest Fire',
+        minimumLevel: 2,
+    },
+    {
+        id: 11,
+        name: 'Flood',
+        minimumLevel: 2,
+    },
+];
 function toDateStr(timestamp) {
     return timestamp ? new Date(timestamp).toISOString() : undefined;
 }
 function toNumber(value) {
     return value === 32767 ? undefined : value;
+}
+function parseNumber(value) {
+    return value === undefined ? undefined : parseInt(value);
+}
+function getDayName(offset) {
+    return offset === 0 ? 'Today' : offset === 1 ? 'Tomorrow' : `Today +${offset}`;
 }
 function toWeatherIconUrl(icon) {
     if (icon === undefined) {
@@ -82,6 +135,7 @@ class MeteoSwiss extends utils.Adapter {
             ...options,
             name: 'meteoswiss',
         });
+        this.persistentIds = [];
         this.on('ready', this.onReady.bind(this));
         this.on('message', this.onMessage.bind(this));
         this.on('unload', this.onUnload.bind(this));
@@ -102,6 +156,7 @@ class MeteoSwiss extends utils.Adapter {
             },
         });
         await this.ensureDatabase();
+        await this.ensureRegistration();
         await this.createObjects();
     }
     /**
@@ -193,6 +248,52 @@ class MeteoSwiss extends utils.Adapter {
             }
         }
     }
+    async ensureRegistration() {
+        var _a;
+        try {
+            await this.ensureState(STATE_ID_GCM, 'GCM Credentials', 'object', 'json');
+            await this.ensureState(STATE_ID_GCM_PERSISTENCE, 'GCM Persistent IDs', 'array', 'json');
+            const currentCredentials = await this.getStateAsync(STATE_ID_GCM);
+            let credentials;
+            if (typeof (currentCredentials === null || currentCredentials === void 0 ? void 0 : currentCredentials.val) === 'string') {
+                credentials = JSON.parse(currentCredentials.val);
+            }
+            else {
+                credentials = await push_receiver_1.register(GCM_SENDER_ID);
+                await this.updateValue(STATE_ID_GCM, JSON.stringify(credentials));
+            }
+            this.log.debug(`GCM: ${JSON.stringify(credentials)}`);
+            const plzs = await Promise.all(this.config.zips.map((zip) => this.database.get('SELECT * FROM plz WHERE plz_pk = ?', [zip])));
+            const uuid = await this.getForeignObjectAsync('system.meta.uuid');
+            const subscription = {
+                pushToken: credentials.fcm.token,
+                userId: (_a = uuid === null || uuid === void 0 ? void 0 : uuid.native) === null || _a === void 0 ? void 0 : _a.uuid,
+                type: 1,
+                subscription: plzs
+                    .filter((plz) => !!plz)
+                    .map((plz, index) => ({
+                    plz: plz.plz_pk,
+                    name: plz.primary_name,
+                    index,
+                    config: WARNINGS.filter((w) => w.minimumLevel).map((w) => ({
+                        warnLevel: w.minimumLevel,
+                        warnType: w.id,
+                        withOutlook: true,
+                    })),
+                })),
+            };
+            this.log.debug(`Subscription: ${JSON.stringify(subscription)}`);
+            await this.axios.post(`${DYNAMIC_BASE_URL}register`, subscription);
+            const currentPersistence = await this.getStateAsync(STATE_ID_GCM_PERSISTENCE);
+            if (typeof (currentPersistence === null || currentPersistence === void 0 ? void 0 : currentPersistence.val) === 'string') {
+                this.persistentIds.push(...JSON.parse(currentPersistence.val));
+            }
+            await push_receiver_1.listen({ ...credentials, persistentIds: this.persistentIds }, (evt) => this.handleGcmNotification(evt).catch((e) => this.log.error(`Couldn't handle GCM notification: ${e}`)));
+        }
+        catch (error) {
+            this.log.error(`Couldn't register to GCM: ${error}`);
+        }
+    }
     async createObjects() {
         for (let i = this.config.zips.length - 1; i >= 0; i--) {
             const zip = this.config.zips[i];
@@ -274,11 +375,11 @@ class MeteoSwiss extends utils.Adapter {
         await this.updateValue(`${zip}.currentWeather.icon`, detail.currentWeather.icon);
         await this.updateValue(`${zip}.currentWeather.iconUrl`, toWeatherIconUrl(detail.currentWeather.icon));
         await this.updateValue(`${zip}.currentWeather.temperature`, detail.currentWeather.temperature);
-        // forecast (6 days per day)
+        // forecast (6 days)
         for (let day = 0; day < 6; day++) {
             const channel = `${zip}.forecast-${day}`;
             if (firstRun) {
-                await this.ensureChannel(channel, 'Forecast');
+                await this.ensureChannel(channel, `Forecast ${getDayName(day)}`);
                 await this.ensureState(`${channel}.date`, 'Date', 'string', `date.forecast.${day}`);
                 await this.ensureState(`${channel}.icon`, 'Icon', 'number', 'value');
                 await this.ensureState(`${channel}.iconUrl`, 'Icon URL', 'string', 'text.url');
@@ -304,8 +405,7 @@ class MeteoSwiss extends utils.Adapter {
                 const h = hour > 9 ? hour.toString() : '0' + hour;
                 const channel = `${zip}.day-${day}-hour-${h}`;
                 if (firstRun) {
-                    const dayName = day === 0 ? 'Today' : day === 1 ? 'Tomorrow' : `Today +${day}`;
-                    await this.ensureChannel(channel, `${dayName} @ ${h}:00`);
+                    await this.ensureChannel(channel, `${getDayName(day)} @ ${h}:00`);
                     await this.ensureState(`${channel}.time`, 'Time', 'string', 'date');
                     await this.ensureState(`${channel}.icon`, 'Icon', 'number', 'value');
                     await this.ensureState(`${channel}.iconUrl`, 'Icon URL', 'string', 'text.url');
@@ -344,44 +444,79 @@ class MeteoSwiss extends utils.Adapter {
             }
         }
         // warnings
-        for (const typeId of Object.keys(WARNING_NAMES)) {
-            const channel = `${zip}.warning-${typeId.padStart(2, '0')}`;
-            await this.ensureChannel(channel, WARNING_NAMES[typeId]);
-            await this.ensureState(`${channel}.level`, 'Level', 'number', 'value', undefined, {
-                0: 'None',
-                1: 'Minimal',
-                2: 'Low',
-                3: 'Medium',
-                4: 'High',
-                5: 'Severe',
-            });
-            await this.ensureState(`${channel}.iconUrl`, 'Icon URL', 'string', 'text.url');
-            await this.ensureState(`${channel}.text`, 'Text', 'string', 'text');
-            await this.ensureState(`${channel}.html`, 'HTML', 'string', 'html');
-            await this.ensureState(`${channel}.validFrom`, 'Valid from', 'string', 'date');
-            await this.ensureState(`${channel}.validTo`, 'Valid to', 'string', 'date');
-            await this.ensureState(`${channel}.outlook`, 'Is outlook', 'boolean', 'indicator');
+        for (const category of WARNINGS) {
+            const channel = `${zip}.warning-${category.id.toString().padStart(2, '0')}`;
+            if (firstRun) {
+                await this.ensureChannel(channel, category.name);
+                await this.ensureState(`${channel}.level`, 'Hazard level', 'number', 'value', undefined, {
+                    0: 'None',
+                    1: 'Minimal',
+                    2: 'Moderate',
+                    3: 'Significant',
+                    4: 'Severe',
+                    5: 'Very severe',
+                });
+                await this.ensureState(`${channel}.iconUrl`, 'Icon URL', 'string', 'text.url');
+                await this.ensureState(`${channel}.text`, 'Text', 'string', 'text');
+                await this.ensureState(`${channel}.html`, 'HTML', 'string', 'html');
+                await this.ensureState(`${channel}.validFrom`, 'Valid from', 'string', 'date');
+                await this.ensureState(`${channel}.validTo`, 'Valid to', 'string', 'date');
+                await this.ensureState(`${channel}.outlook`, 'Is outlook', 'boolean', 'indicator');
+            }
             let warning;
-            const warnings = detail.warnings.filter((w) => w.warnType.toString() === typeId);
+            const warnings = detail.warnings.filter((w) => w.warnType === category.id);
+            warnings.sort((a, b) => b.warnLevel - a.warnLevel);
             if (warnings.length === 1) {
                 warning = warnings[0];
             }
             else if (warnings.length > 1) {
-                warning = detail.warnings.find((w) => !w.outlook);
-                if (!warning) {
-                    warning = warnings.sort((a, b) => { var _a, _b; return ((_a = a.validFrom) !== null && _a !== void 0 ? _a : 0) - ((_b = b.validFrom) !== null && _b !== void 0 ? _b : 0); })[0];
-                }
+                warning = detail.warnings.find((w) => !w.outlook) || warnings[0];
             }
-            await this.updateValue(`${channel}.level`, (warning === null || warning === void 0 ? void 0 : warning.warnLevel) || 0);
-            await this.updateValue(`${channel}.iconUrl`, warning
-                ? WARNING_ICON_URL_FORMAT.replace('%s', typeId).replace('%s', warning.warnLevel.toString())
-                : null);
-            await this.updateValue(`${channel}.text`, warning === null || warning === void 0 ? void 0 : warning.text);
-            await this.updateValue(`${channel}.html`, warning === null || warning === void 0 ? void 0 : warning.htmlText);
-            await this.updateValue(`${channel}.validFrom`, toDateStr(warning === null || warning === void 0 ? void 0 : warning.validFrom));
-            await this.updateValue(`${channel}.validTo`, toDateStr(warning === null || warning === void 0 ? void 0 : warning.validTo));
-            await this.updateValue(`${channel}.outlook`, warning === null || warning === void 0 ? void 0 : warning.outlook);
+            await this.updateWarning(channel, category.id.toString(), warning);
         }
+    }
+    async handleGcmNotification(evt) {
+        const { notification, persistentId } = evt;
+        // Update list of persistentId
+        this.persistentIds.push(persistentId);
+        await this.updateValue(STATE_ID_GCM_PERSISTENCE, JSON.stringify(this.persistentIds));
+        this.log.debug(`Notification: ${JSON.stringify(notification)}`);
+        const warning = notification.data;
+        const channel = `${warning.plz}.warning-${warning.warnType.padStart(2, '0')}`;
+        const states = await this.getStatesAsync(`${channel}.*`);
+        if (!states || Object.keys(states).length === 0) {
+            throw new Error(`Received warning ${warning.warnType} for ${warning.plz}, but couldn't find channel.`);
+        }
+        const currentLevel = states[`${channel}.level`];
+        if (typeof (currentLevel === null || currentLevel === void 0 ? void 0 : currentLevel.val) === 'number' && currentLevel.val > parseInt(warning.warnLevel)) {
+            // the received warning has a lower level
+            const currentOutlook = states[`${channel}.outlook`];
+            if ((currentOutlook === null || currentOutlook === void 0 ? void 0 : currentOutlook.val) !== true || warning.outlook === 'true') {
+                // only allow for lower level if the received warning is not outlook and the existing one is
+                this.log.debug(`Ignoring warning ${warning.warnType} for ${warning.plz} because of lower level`);
+                return;
+            }
+        }
+        await this.updateWarning(channel, warning.warnType, {
+            warnType: parseInt(warning.warnType),
+            warnLevel: parseInt(warning.warnLevel),
+            text: warning.warnText,
+            validFrom: parseNumber(warning.validFrom),
+            validTo: parseNumber(warning.validTo),
+            ordering: warning.ordering,
+            htmlText: warning.warnText,
+            outlook: warning.outlook === 'true',
+            links: [],
+        });
+    }
+    async updateWarning(channel, type, warning) {
+        await this.updateValue(`${channel}.level`, (warning === null || warning === void 0 ? void 0 : warning.warnLevel) || 0);
+        await this.updateValue(`${channel}.iconUrl`, warning ? WARNING_ICON_URL_FORMAT.replace('%s', type).replace('%s', warning.warnLevel.toString()) : null);
+        await this.updateValue(`${channel}.text`, warning === null || warning === void 0 ? void 0 : warning.text);
+        await this.updateValue(`${channel}.html`, warning === null || warning === void 0 ? void 0 : warning.htmlText);
+        await this.updateValue(`${channel}.validFrom`, toDateStr(warning === null || warning === void 0 ? void 0 : warning.validFrom));
+        await this.updateValue(`${channel}.validTo`, toDateStr(warning === null || warning === void 0 ? void 0 : warning.validTo));
+        await this.updateValue(`${channel}.outlook`, warning === null || warning === void 0 ? void 0 : warning.outlook);
     }
     /**
      * We used short variable names here to make the code below as short as possible.

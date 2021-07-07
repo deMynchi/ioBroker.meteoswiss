@@ -169,3 +169,29 @@ export namespace Db {
         additional_en: ?string;
     }
 }
+
+export namespace Push {
+    export interface WarningData {
+        msg: string;
+        warnLevel: string; // number as string
+        warnType: string; // number as string
+        ordering: string;
+        mute: 'true' | 'false';
+        validFrom?: string; // number as string
+        validTo?: string; // number as string
+        gps: 'true' | 'false';
+        headLine: string;
+        warnText: string;
+        name: string; // name of the location
+        outlook: 'true' | 'false';
+        plz: string; // number as string
+        isAlertswissAlarm: 'true' | 'false';
+    }
+
+    export interface Warning {
+        data: WarningData;
+        from: string; // senderId
+        priority: string;
+        collapse_key: string;
+    }
+}
