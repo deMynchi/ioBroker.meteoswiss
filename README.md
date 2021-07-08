@@ -15,6 +15,32 @@
 
 Provides weather information from MeteoSwiss
 
+## State names
+
+To keep the state IDs short and clear, many states only use numbers to distinguish them. All states have meaningful names, so you may need to enable the "Name" column in ioBroker.admin to understand the meaning of all states.
+
+## Weather updates
+
+MeteoSwiss updates its weather data every 10 minutes. This adapter tries to get the weather data as quickly as possible after it changed and will adapt its refresh timer accordingly. You can expect weather data to usually be no older than 11 minutes.
+
+## Unknown values
+
+Certain values are not always reported by all weather stations or forecast locations. Those states will have the value `null` to clearly distinguish between unknown values and known "0" values.
+
+## Aggregation of values
+
+Certain measurements and predictions are reported more often than the 3 hour interval this adapter provides as states. So, these values are aggregated in a logical way (minimum is the minimum of all values in the range, maximum is the maximum, ...).
+
+## Weather warnings
+
+This adapter also subscribes to the push notifications from MeteoSwiss and updates the `warning-xx` states accordingly.
+
+Since the warnings received over push notifications don't have the same data as those received with the weather data, it is likely that the `warning-xx` states will change twice: immediately after receiving the push notification and then again when the weather data is updated within the next 10 minutes.
+
+All `warning-xx` states show the currently most important active warning of the given category. It is possible that at the same time multiple warnings of the same category exist, but this adapter will only show the most important one. Warnings of a higher level and warnings that are not marked as "outlook" are considered more important than warnings of a lower level or marked as "outlook".
+
+If no warning of a given category is active, the `warning-xx.level` state will have the value `0` (None) and all other states of that category will be `null`.
+
 ## Changelog
 
 <!--
