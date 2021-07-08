@@ -1,8 +1,20 @@
 {
     "common": {
         "name": "meteoswiss",
-        "version": "0.1.2",
+        "version": "0.2.0",
         "news": {
+            "0.2.0": {
+                "en": "Added warnings for PLZ entries.",
+                "de": "Warnungen für PLZ-Einträge hinzugefügt.",
+                "ru": "Добавлены предупреждения для записей PLZ.",
+                "pt": "Adicionados avisos para entradas PLZ.",
+                "nl": "Waarschuwingen toegevoegd voor PLZ-items.",
+                "fr": "Ajout d'avertissements pour les entrées PLZ.",
+                "it": "Aggiunti avvisi per le voci PLZ.",
+                "es": "Se agregaron advertencias para las entradas de PLZ.",
+                "pl": "Dodano ostrzeżenia dla wpisów PLZ.",
+                "zh-cn": "为 PLZ 条目添加了警告。"
+            },
             "0.1.2": {
                 "en": "Fixed connection state always yellow.",
                 "de": "Fester Verbindungsstatus immer gelb.",
