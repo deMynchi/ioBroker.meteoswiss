@@ -590,7 +590,7 @@ class MeteoSwiss extends utils.Adapter {
             if (warnings.length === 1) {
                 warning = warnings[0];
             } else if (warnings.length > 1) {
-                warning = detail.warnings.find((w) => !w.outlook) || warnings[0];
+                warning = warnings.find((w) => !w.outlook) || warnings[0];
             }
 
             await this.updateWarning(channel, category.id.toString(), warning);
