@@ -1,8 +1,20 @@
 {
     "common": {
         "name": "meteoswiss",
-        "version": "0.2.0",
+        "version": "0.2.1",
         "news": {
+            "0.2.1": {
+                "en": "FIxed issue where sometimes the wrong warning texts were shown when there are multiple warnings from different categories.",
+                "de": "Problem behoben, bei dem manchmal die falschen Warntexte angezeigt wurden, wenn mehrere Warnungen aus verschiedenen Kategorien vorhanden waren.",
+                "ru": "Исправлена проблема, из-за которой иногда отображались неправильные тексты предупреждений при наличии нескольких предупреждений из разных категорий.",
+                "pt": "Problema corrigido em que às vezes os textos de aviso incorretos eram exibidos quando havia vários avisos de categorias diferentes.",
+                "nl": "Probleem opgelost waarbij soms de verkeerde waarschuwingsteksten werden weergegeven als er meerdere waarschuwingen uit verschillende categorieën zijn.",
+                "fr": "Correction d'un problème où parfois les mauvais textes d'avertissement étaient affichés lorsqu'il y avait plusieurs avertissements de différentes catégories.",
+                "it": "Risolto il problema per cui a volte venivano visualizzati testi di avviso errati quando sono presenti più avvisi di diverse categorie.",
+                "es": "Problema solucionado donde a veces se mostraban los textos de advertencia incorrectos cuando hay múltiples advertencias de diferentes categorías.",
+                "pl": "Naprawiono problem polegający na tym, że czasami wyświetlały się nieprawidłowe teksty ostrzeżeń, gdy istnieje wiele ostrzeżeń z różnych kategorii.",
+                "zh-cn": "修复了当有来自不同类别的多个警告时有时会显示错误警告文本的问题。"
+            },
             "0.2.0": {
                 "en": "Added warnings for PLZ entries.",
                 "de": "Warnungen für PLZ-Einträge hinzugefügt.",

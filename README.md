@@ -48,7 +48,7 @@ If no warning of a given category is active, the `warning-xx.level` state will h
 	### __WORK IN PROGRESS__
 -->
 
-### **WORK IN PROGRESS**
+### 0.2.1 (2021-07-13)
 
 -   (deMynchi) FIxed issue where sometimes the wrong warning texts were shown when there are multiple warnings from different categories.
 
