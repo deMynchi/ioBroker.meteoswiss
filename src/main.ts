@@ -167,7 +167,10 @@ class MeteoSwiss extends utils.Adapter {
 
         await this.ensureDatabase();
 
-        await this.ensureRegistration();
+        // Currently FCM is no longer supported by push-receiver:
+        // https://github.com/MatthieuLemoine/push-receiver/issues/68
+        // And we don't have all information required by https://aracna.dariosechi.it/fcm/get-started/
+        // await this.ensureRegistration();
 
         await this.createObjects();
     }

@@ -33,10 +33,6 @@ Certain measurements and predictions are reported more often than the 3 hour int
 
 ## Weather warnings
 
-This adapter also subscribes to the push notifications from MeteoSwiss and updates the `warning-xx` states accordingly.
-
-Since the warnings received over push notifications don't have the same data as those received with the weather data, it is likely that the `warning-xx` states will change twice: immediately after receiving the push notification and then again when the weather data is updated within the next 10 minutes.
-
 All `warning-xx` states show the currently most important active warning of the given category. It is possible that at the same time multiple warnings of the same category exist, but this adapter will only show the most important one. Warnings of a higher level and warnings that are not marked as "outlook" are considered more important than warnings of a lower level or marked as "outlook".
 
 If no warning of a given category is active, the `warning-xx.level` state will have the value `0` (None) and all other states of that category will be `null`.
