@@ -35,8 +35,8 @@ const push_receiver_1 = require("push-receiver");
 const sqlite_1 = require("sqlite");
 const sqlite3_1 = __importDefault(require("sqlite3"));
 const STATIC_BASE_URL = 'https://s3-eu-central-1.amazonaws.com/app-prod-static-fra.meteoswiss-app.ch/v1/';
-const DYNAMIC_BASE_URL = 'https://app-prod-ws.meteoswiss-app.ch/v1/';
-const USER_AGENT = 'Android-30 ch.admin.meteoswiss-2410';
+const DYNAMIC_BASE_URL = 'https://app-prod-ws.meteoswiss-app.ch/v3/';
+const USER_AGENT = 'Android-30 ch.admin.meteoswiss-3420';
 const GCM_SENDER_ID = '678360867444';
 const WEATHER_ICON_URL_FORMAT = 'https://cdn.jsdelivr.net/npm/meteo-icons/icons/weathericon_%s.png';
 const WARNING_ICON_URL_FORMAT = 'https://cdn.jsdelivr.net/npm/meteo-icons/icons/bulletinwebicon_type%s_level%s.png';
@@ -95,6 +95,11 @@ const WARNINGS = [
     {
         id: 11,
         name: 'Flood',
+        minimumLevel: 2,
+    },
+    {
+        id: 12,
+        name: 'Drought',
         minimumLevel: 2,
     },
 ];
@@ -378,8 +383,8 @@ class MeteoSwiss extends utils.Adapter {
         await this.updateValue(`${zip}.currentWeather.icon`, detail.currentWeather.icon);
         await this.updateValue(`${zip}.currentWeather.iconUrl`, toWeatherIconUrl(detail.currentWeather.icon));
         await this.updateValue(`${zip}.currentWeather.temperature`, detail.currentWeather.temperature);
-        // forecast (6 days)
-        for (let day = 0; day < 6; day++) {
+        // forecast (8 days)
+        for (let day = 0; day < 8; day++) {
             const channel = `${zip}.forecast-${day}`;
             if (firstRun) {
                 await this.ensureChannel(channel, `Forecast ${getDayName(day)}`);
@@ -401,7 +406,7 @@ class MeteoSwiss extends utils.Adapter {
         // 3 hour slots
         let precipitationIndex10m = 0;
         let precipitationIndex1h = 0;
-        for (let day = 0; day < 6; day++) {
+        for (let day = 0; day < 8; day++) {
             for (let hour = 0; hour < 24; hour += 3) {
                 const index1h = day * 24 + hour;
                 const index3h = index1h / 3;
@@ -422,7 +427,7 @@ class MeteoSwiss extends utils.Adapter {
                 const offset = (day * 24 + hour) * minutes(60);
                 const now = detail.graph.start + offset;
                 await this.updateValue(`${channel}.time`, toDateStr(now));
-                const icon = detail.graph.weatherIcon3h[index3h];
+                const icon = detail.graph.weatherIcon3hV2[index3h];
                 await this.updateValue(`${channel}.icon`, icon);
                 await this.updateValue(`${channel}.iconUrl`, toWeatherIconUrl(icon));
                 await this.updateValue(`${channel}.windDirection`, detail.graph.windDirection3h[index3h]);

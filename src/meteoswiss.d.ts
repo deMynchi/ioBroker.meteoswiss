@@ -47,6 +47,7 @@ export namespace Rest {
         startLowResolution: number;
         precipitation10m: number[];
         weatherIcon3h: number[];
+        weatherIcon3hV2: number[];
         windDirection3h: number[];
         windSpeed3h: number[];
         sunrise: number[];
