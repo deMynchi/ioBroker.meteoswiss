@@ -43,10 +43,14 @@ If no warning of a given category is active, the `warning-xx.level` state will h
 	Placeholder for the next version (at the beginning of the line):
 	### __WORK IN PROGRESS__
 -->
+### __WORK IN PROGRESS__
+
+-   (deMynchi) Update to API version 3
+-   (deMynchi) Disable subscription (no longer working)
 
 ### 0.2.1 (2021-07-13)
 
--   (deMynchi) FIxed issue where sometimes the wrong warning texts were shown when there are multiple warnings from different categories.
+-   (deMynchi) Fixed issue where sometimes the wrong warning texts were shown when there are multiple warnings from different categories.
 
 ### 0.2.0 (2021-07-08)
 
@@ -68,7 +72,7 @@ If no warning of a given category is active, the `warning-xx.level` state will h
 
 MIT License
 
-Copyright (c) 2021 deMynchi
+Copyright (c) 2025 deMynchi
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
