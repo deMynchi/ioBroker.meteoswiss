@@ -1,8 +1,21 @@
 {
     "common": {
         "name": "meteoswiss",
-        "version": "0.2.1",
+        "version": "0.2.2",
         "news": {
+            "0.2.2": {
+                "en": "Update to API version 3\nDisable subscription (no longer working)",
+                "de": "Update auf API-Version 3\nAbonnement deaktivieren (nicht mehr arbeiten)",
+                "ru": "Обновление API версии 3\nОтключение подписки (больше не работает)",
+                "pt": "Atualizar para a versão 3 da API\nDesactivar a subscrição (já não funciona)",
+                "nl": "Bijwerken naar API versie 3\nAbonnement uitschakelen (niet langer werken)",
+                "fr": "Mise à jour vers la version 3 de l'API\nDésabonnement (ne fonctionne plus)",
+                "it": "Aggiornamento alla versione API 3\nDisattivare l'abbonamento (non più funzionante)",
+                "es": "Actualizar la versión 3 de API\nSuscripción deshabilitada (ya no funciona)",
+                "pl": "Aktualizacja do wersji 3 API\nWyłącz subskrypcję (już nie działa)",
+                "uk": "Оновлення версії API 3\nВимкнути підписку (не довше працює)",
+                "zh-cn": "更新到 API 版本 3\n禁用订阅( 不再工作)"
+            },
             "0.2.1": {
                 "en": "FIxed issue where sometimes the wrong warning texts were shown when there are multiple warnings from different categories.",
                 "de": "Problem behoben, bei dem manchmal die falschen Warntexte angezeigt wurden, wenn mehrere Warnungen aus verschiedenen Kategorien vorhanden waren.",
@@ -89,8 +102,14 @@
             "pl": "Provides weather information from MeteoSwiss",
             "zh-cn": "Provides weather information from MeteoSwiss"
         },
-        "authors": ["deMynchi"],
-        "keywords": ["weather", "meteo", "switzerland"],
+        "authors": [
+            "deMynchi"
+        ],
+        "keywords": [
+            "weather",
+            "meteo",
+            "switzerland"
+        ],
         "license": "MIT",
         "platform": "Javascript/Node.js",
         "main": "build/main.js",
