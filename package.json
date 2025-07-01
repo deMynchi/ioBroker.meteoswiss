@@ -1,6 +1,6 @@
 {
   "name": "iobroker.meteoswiss",
-  "version": "0.2.2",
+  "version": "0.2.1",
   "description": "Provides weather information from MeteoSwiss",
   "author": {
     "name": "deMynchi"

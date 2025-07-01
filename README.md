@@ -43,7 +43,7 @@ If no warning of a given category is active, the `warning-xx.level` state will h
 	Placeholder for the next version (at the beginning of the line):
 	### __WORK IN PROGRESS__
 -->
-### 0.2.2 (2025-07-01)
+### __WORK IN PROGRESS__
 
 -   (deMynchi) Update to API version 3
 -   (deMynchi) Disable subscription (no longer working)
