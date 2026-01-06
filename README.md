@@ -43,6 +43,11 @@ If no warning of a given category is active, the `warning-xx.level` state will h
 	Placeholder for the next version (at the beginning of the line):
 	### __WORK IN PROGRESS__
 -->
+
+### **WORK IN PROGRESS**
+
+- (deMynchi) Fixes to satisfy repochecker
+
 ### 1.0.0 (2026-01-06)
 
 - (deMynchi) Update to API version 3
