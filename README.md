@@ -48,6 +48,8 @@ If no warning of a given category is active, the `warning-xx.level` state will h
 
 - (deMynchi) Update to API version 3
 - (deMynchi) Remove subscription (no longer working)
+- (deMynchi) Use latest create-adapter template
+- (deMynchi) Switch to pure TypeScript adapter (no more build)
 
 ### 0.2.1 (2021-07-13)
 
