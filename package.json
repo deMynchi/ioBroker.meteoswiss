@@ -14,7 +14,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git@github.com:deMynchi/ioBroker.meteoswiss.git"
+    "url": "git+ssh://git@github.com/deMynchi/ioBroker.meteoswiss.git"
   },
   "engines": {
     "node": ">= 20"
