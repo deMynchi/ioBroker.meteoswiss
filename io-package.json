@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "meteoswiss",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "news": {
+      "1.0.1": {
+        "en": "Fixes to satisfy repochecker",
+        "de": "Korrekturen, um Repochecker zu befriedigen",
+        "ru": "Исправления для удовлетворения repochecker",
+        "pt": "Fixações para satisfazer o repochecker",
+        "nl": "Bevestigingen om aan de repochecker te voldoen",
+        "fr": "Fixations pour satisfaire les repocheurs",
+        "it": "Riparazioni per soddisfare i repochecker",
+        "es": "Arreglos para satisfacer el repochecker",
+        "pl": "Fixes to safety repochecker",
+        "uk": "Виправлення для задоволення repochecker",
+        "zh-cn": "满足再检查器的修复"
+      },
       "1.0.0": {
         "en": "Update to API version 3\nRemove subscription (no longer working)\nUse latest create-adapter template\nSwitch to pure TypeScript adapter (no more build)",
         "de": "Update auf API-Version 3\nAbo entfernen (nicht mehr arbeiten)\nVerwenden Sie die neueste create-Adapter-Vorlage\nWechseln Sie zum reinen TypeScript Adapter (nicht mehr bauen)",
