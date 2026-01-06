@@ -1,166 +1,179 @@
 {
-    "common": {
-        "name": "meteoswiss",
-        "version": "0.2.1",
-        "news": {
-            "0.2.1": {
-                "en": "FIxed issue where sometimes the wrong warning texts were shown when there are multiple warnings from different categories.",
-                "de": "Problem behoben, bei dem manchmal die falschen Warntexte angezeigt wurden, wenn mehrere Warnungen aus verschiedenen Kategorien vorhanden waren.",
-                "ru": "Исправлена проблема, из-за которой иногда отображались неправильные тексты предупреждений при наличии нескольких предупреждений из разных категорий.",
-                "pt": "Problema corrigido em que às vezes os textos de aviso incorretos eram exibidos quando havia vários avisos de categorias diferentes.",
-                "nl": "Probleem opgelost waarbij soms de verkeerde waarschuwingsteksten werden weergegeven als er meerdere waarschuwingen uit verschillende categorieën zijn.",
-                "fr": "Correction d'un problème où parfois les mauvais textes d'avertissement étaient affichés lorsqu'il y avait plusieurs avertissements de différentes catégories.",
-                "it": "Risolto il problema per cui a volte venivano visualizzati testi di avviso errati quando sono presenti più avvisi di diverse categorie.",
-                "es": "Problema solucionado donde a veces se mostraban los textos de advertencia incorrectos cuando hay múltiples advertencias de diferentes categorías.",
-                "pl": "Naprawiono problem polegający na tym, że czasami wyświetlały się nieprawidłowe teksty ostrzeżeń, gdy istnieje wiele ostrzeżeń z różnych kategorii.",
-                "zh-cn": "修复了当有来自不同类别的多个警告时有时会显示错误警告文本的问题。",
-                "uk": "Виправлено проблему, через яку іноді відображалися неправильні тексти попереджень, коли було кілька попереджень із різних категорій."
-            },
-            "0.2.0": {
-                "en": "Added warnings for PLZ entries.",
-                "de": "Warnungen für PLZ-Einträge hinzugefügt.",
-                "ru": "Добавлены предупреждения для записей PLZ.",
-                "pt": "Adicionados avisos para entradas PLZ.",
-                "nl": "Waarschuwingen toegevoegd voor PLZ-items.",
-                "fr": "Ajout d'avertissements pour les entrées PLZ.",
-                "it": "Aggiunti avvisi per le voci PLZ.",
-                "es": "Se agregaron advertencias para las entradas de PLZ.",
-                "pl": "Dodano ostrzeżenia dla wpisów PLZ.",
-                "zh-cn": "为 PLZ 条目添加了警告。",
-                "uk": "Додано попередження для записів PLZ."
-            },
-            "0.1.2": {
-                "en": "Fixed connection state always yellow.",
-                "de": "Fester Verbindungsstatus immer gelb.",
-                "ru": "Состояние фиксированного соединения всегда желтое.",
-                "pt": "Estado de conexão fixa sempre amarelo.",
-                "nl": "Vaste verbindingsstatus altijd geel.",
-                "fr": "État de connexion fixe toujours jaune.",
-                "it": "Stato di connessione fisso sempre giallo.",
-                "es": "Estado de conexión fija siempre amarillo.",
-                "pl": "Stały stan połączenia zawsze żółty.",
-                "zh-cn": "固定连接状态始终为黄色。",
-                "uk": "Фіксований стан підключення завжди жовтий."
-            },
-            "0.1.1": {
-                "en": "Fixed initial download of sqlite db that was broken",
-                "de": "Der erste Download von SQLite-Datenbank, der fehlerhaft war, wurde behoben",
-                "ru": "Исправлена некорректная первоначальная загрузка sqlite db.",
-                "pt": "Corrigido download inicial de sqlite db que estava quebrado",
-                "nl": "Vaste initiële download van sqlite db die was verbroken",
-                "fr": "Correction du téléchargement initial de la base de données sqlite qui était cassée",
-                "it": "Risolto il problema con il download iniziale di sqlite db che non funzionava",
-                "es": "Se corrigió la descarga inicial de sqlite db que estaba rota",
-                "pl": "Naprawiono początkowe pobieranie sqlite db, który był uszkodzony",
-                "zh-cn": "修复了损坏的sqlite db的初始下载",
-                "uk": "Виправлено початкове завантаження бази даних sqlite, яка була зламана"
-            },
-            "0.1.0": {
-                "en": "initial release",
-                "de": "Erstveröffentlichung",
-                "ru": "Начальная версия",
-                "pt": "lançamento inicial",
-                "nl": "Eerste uitgave",
-                "fr": "Première version",
-                "it": "Versione iniziale",
-                "es": "Versión inicial",
-                "pl": "Pierwsze wydanie",
-                "zh-cn": "首次出版",
-                "uk": "початковий випуск"
-            }
-        },
-        "titleLang": {
-            "en": "MeteoSwiss",
-            "de": "MeteoSchweiz",
-            "ru": "MeteoSwiss",
-            "pt": "MeteoSwiss",
-            "nl": "MeteoSwiss",
-            "fr": "MétéoSuisse",
-            "it": "MeteoSvizzera",
-            "es": "MeteoSwiss",
-            "pl": "MeteoSwiss",
-            "uk": "MeteoSwiss",
-            "zh-cn": "MeteoSwiss"
-        },
-        "desc": {
-            "en": "Provides weather information from MeteoSwiss",
-            "de": "Bietet Wetterinformationen von MeteoSchweiz",
-            "ru": "Предоставляет информацию о погоде от MeteoSwiss.",
-            "pt": "Fornece informações meteorológicas do MeteoSwiss",
-            "nl": "Biedt weerinformatie van MeteoSwiss",
-            "fr": "Fournit des informations météorologiques de MétéoSuisse",
-            "it": "Fornisce informazioni meteorologiche di MeteoSvizzera",
-            "es": "Proporciona información meteorológica de MeteoSwiss.",
-            "pl": "Dostarcza informacji o pogodzie z MeteoSwiss",
-            "uk": "Надає інформацію про погоду від MeteoSwiss",
-            "zh-cn": "提供来自 MeteoSwiss 的天气信息"
-        },
-        "authors": [
-            "deMynchi"
-        ],
-        "keywords": [
-            "weather",
-            "meteo",
-            "switzerland"
-        ],
-        "licenseInformation": {
-            "type": "free",
-            "license": "MIT"
-        },
-        "platform": "Javascript/Node.js",
-        "icon": "meteoswiss.png",
-        "enabled": true,
-        "extIcon": "https://raw.githubusercontent.com/deMynchi/ioBroker.meteoswiss/master/admin/meteoswiss.png",
-        "readme": "https://github.com/deMynchi/ioBroker.meteoswiss/blob/master/README.md",
-        "loglevel": "info",
-        "tier": 3,
-        "mode": "daemon",
-        "type": "weather",
-        "compact": true,
-        "connectionType": "cloud",
-        "dataSource": "poll",
-        "messagebox": true,
-        "adminUI": {
-            "config": "json"
-        },
-        "dependencies": [
-            {
-                "js-controller": ">=6.0.11"
-            }
-        ],
-        "globalDependencies": [
-            {
-                "admin": ">=7.0.23"
-            }
-        ]
+  "common": {
+    "name": "meteoswiss",
+    "version": "1.0.0",
+    "news": {
+      "1.0.0": {
+        "en": "Update to API version 3\nRemove subscription (no longer working)\nUse latest create-adapter template\nSwitch to pure TypeScript adapter (no more build)",
+        "de": "Update auf API-Version 3\nAbo entfernen (nicht mehr arbeiten)\nVerwenden Sie die neueste create-Adapter-Vorlage\nWechseln Sie zum reinen TypeScript Adapter (nicht mehr bauen)",
+        "ru": "Обновление API версии 3\nУдалить подписку (больше не работает)\nИспользуйте последний шаблон Create-adapter\nПереход на чистый адаптер TypeScript (больше нет сборки)",
+        "pt": "Atualizar para a versão 3 da API\nRemover a subscrição (já não funciona)\nUsar o modelo mais recente de adaptação à criação\nMudar para o adaptador TypeScript puro (sem mais compilação)",
+        "nl": "Bijwerken naar API versie 3\nAbonnement verwijderen (niet meer werken)\nGebruik de nieuwste aanmaak-adapter template\nSchakel over op zuivere TypeScript-adapter (niet meer gebouwd)",
+        "fr": "Mise à jour vers la version 3 de l'API\nSupprimer l'abonnement (ne fonctionne plus)\nUtiliser le dernier modèle create-adaptateur\nPassez à l'adaptateur TypeScript pur (plus de build)",
+        "it": "Aggiornamento alla versione API 3\nRimuovere l'abbonamento (non più funzionante)\nUtilizzare l'ultimo modello create-adapter\nPassare all'adattatore TypeScript puro (non più costruire)",
+        "es": "Actualizar la versión 3 de API\nEliminar la suscripción (no trabajar más)\nUtilice la última plantilla de creación-adapter\nCambiar al adaptador TipoScript puro (no más construir)",
+        "pl": "Aktualizacja do wersji 3 API\nUsuń subskrypcję (już nie działa)\nUżyj najnowszego szablonu create- adapter\nPrzełącz na czysty adapter TypeScript (koniec budowy)",
+        "uk": "Оновлення версії API 3\nВидаліть підписку (не довше працює)\nВикористовуйте останні шаблони створення\nПеремикач на чистий адаптер TypeScript (не більше збірки)",
+        "zh-cn": "更新到 API 版本 3\n删除订阅( 不再工作)\n使用最新的创建适应模板\n切换到纯类型Script适配器( 不再构建)"
+      },
+      "0.2.1": {
+        "en": "FIxed issue where sometimes the wrong warning texts were shown when there are multiple warnings from different categories.",
+        "de": "Problem behoben, bei dem manchmal die falschen Warntexte angezeigt wurden, wenn mehrere Warnungen aus verschiedenen Kategorien vorhanden waren.",
+        "ru": "Исправлена проблема, из-за которой иногда отображались неправильные тексты предупреждений при наличии нескольких предупреждений из разных категорий.",
+        "pt": "Problema corrigido em que às vezes os textos de aviso incorretos eram exibidos quando havia vários avisos de categorias diferentes.",
+        "nl": "Probleem opgelost waarbij soms de verkeerde waarschuwingsteksten werden weergegeven als er meerdere waarschuwingen uit verschillende categorieën zijn.",
+        "fr": "Correction d'un problème où parfois les mauvais textes d'avertissement étaient affichés lorsqu'il y avait plusieurs avertissements de différentes catégories.",
+        "it": "Risolto il problema per cui a volte venivano visualizzati testi di avviso errati quando sono presenti più avvisi di diverse categorie.",
+        "es": "Problema solucionado donde a veces se mostraban los textos de advertencia incorrectos cuando hay múltiples advertencias de diferentes categorías.",
+        "pl": "Naprawiono problem polegający na tym, że czasami wyświetlały się nieprawidłowe teksty ostrzeżeń, gdy istnieje wiele ostrzeżeń z różnych kategorii.",
+        "zh-cn": "修复了当有来自不同类别的多个警告时有时会显示错误警告文本的问题。",
+        "uk": "Виправлено проблему, через яку іноді відображалися неправильні тексти попереджень, коли було кілька попереджень із різних категорій."
+      },
+      "0.2.0": {
+        "en": "Added warnings for PLZ entries.",
+        "de": "Warnungen für PLZ-Einträge hinzugefügt.",
+        "ru": "Добавлены предупреждения для записей PLZ.",
+        "pt": "Adicionados avisos para entradas PLZ.",
+        "nl": "Waarschuwingen toegevoegd voor PLZ-items.",
+        "fr": "Ajout d'avertissements pour les entrées PLZ.",
+        "it": "Aggiunti avvisi per le voci PLZ.",
+        "es": "Se agregaron advertencias para las entradas de PLZ.",
+        "pl": "Dodano ostrzeżenia dla wpisów PLZ.",
+        "zh-cn": "为 PLZ 条目添加了警告。",
+        "uk": "Додано попередження для записів PLZ."
+      },
+      "0.1.2": {
+        "en": "Fixed connection state always yellow.",
+        "de": "Fester Verbindungsstatus immer gelb.",
+        "ru": "Состояние фиксированного соединения всегда желтое.",
+        "pt": "Estado de conexão fixa sempre amarelo.",
+        "nl": "Vaste verbindingsstatus altijd geel.",
+        "fr": "État de connexion fixe toujours jaune.",
+        "it": "Stato di connessione fisso sempre giallo.",
+        "es": "Estado de conexión fija siempre amarillo.",
+        "pl": "Stały stan połączenia zawsze żółty.",
+        "zh-cn": "固定连接状态始终为黄色。",
+        "uk": "Фіксований стан підключення завжди жовтий."
+      },
+      "0.1.1": {
+        "en": "Fixed initial download of sqlite db that was broken",
+        "de": "Der erste Download von SQLite-Datenbank, der fehlerhaft war, wurde behoben",
+        "ru": "Исправлена некорректная первоначальная загрузка sqlite db.",
+        "pt": "Corrigido download inicial de sqlite db que estava quebrado",
+        "nl": "Vaste initiële download van sqlite db die was verbroken",
+        "fr": "Correction du téléchargement initial de la base de données sqlite qui était cassée",
+        "it": "Risolto il problema con il download iniziale di sqlite db che non funzionava",
+        "es": "Se corrigió la descarga inicial de sqlite db que estaba rota",
+        "pl": "Naprawiono początkowe pobieranie sqlite db, który był uszkodzony",
+        "zh-cn": "修复了损坏的sqlite db的初始下载",
+        "uk": "Виправлено початкове завантаження бази даних sqlite, яка була зламана"
+      },
+      "0.1.0": {
+        "en": "initial release",
+        "de": "Erstveröffentlichung",
+        "ru": "Начальная версия",
+        "pt": "lançamento inicial",
+        "nl": "Eerste uitgave",
+        "fr": "Première version",
+        "it": "Versione iniziale",
+        "es": "Versión inicial",
+        "pl": "Pierwsze wydanie",
+        "zh-cn": "首次出版",
+        "uk": "початковий випуск"
+      }
     },
-    "native": {
-        "language": "de",
-        "zips": [],
-        "stations": []
+    "titleLang": {
+      "en": "MeteoSwiss",
+      "de": "MeteoSchweiz",
+      "ru": "MeteoSwiss",
+      "pt": "MeteoSwiss",
+      "nl": "MeteoSwiss",
+      "fr": "MétéoSuisse",
+      "it": "MeteoSvizzera",
+      "es": "MeteoSwiss",
+      "pl": "MeteoSwiss",
+      "uk": "MeteoSwiss",
+      "zh-cn": "MeteoSwiss"
     },
-    "objects": [],
-    "instanceObjects": [
-        {
-            "_id": "info",
-            "type": "channel",
-            "common": {
-                "name": "Information"
-            },
-            "native": {}
-        },
-        {
-            "_id": "info.connection",
-            "type": "state",
-            "common": {
-                "role": "indicator.connected",
-                "name": "Device or service connected",
-                "type": "boolean",
-                "read": true,
-                "write": false,
-                "def": false
-            },
-            "native": {}
-        }
+    "desc": {
+      "en": "Provides weather information from MeteoSwiss",
+      "de": "Bietet Wetterinformationen von MeteoSchweiz",
+      "ru": "Предоставляет информацию о погоде от MeteoSwiss.",
+      "pt": "Fornece informações meteorológicas do MeteoSwiss",
+      "nl": "Biedt weerinformatie van MeteoSwiss",
+      "fr": "Fournit des informations météorologiques de MétéoSuisse",
+      "it": "Fornisce informazioni meteorologiche di MeteoSvizzera",
+      "es": "Proporciona información meteorológica de MeteoSwiss.",
+      "pl": "Dostarcza informacji o pogodzie z MeteoSwiss",
+      "uk": "Надає інформацію про погоду від MeteoSwiss",
+      "zh-cn": "提供来自 MeteoSwiss 的天气信息"
+    },
+    "authors": [
+      "deMynchi"
+    ],
+    "keywords": [
+      "weather",
+      "meteo",
+      "switzerland"
+    ],
+    "licenseInformation": {
+      "type": "free",
+      "license": "MIT"
+    },
+    "platform": "Javascript/Node.js",
+    "icon": "meteoswiss.png",
+    "enabled": true,
+    "extIcon": "https://raw.githubusercontent.com/deMynchi/ioBroker.meteoswiss/master/admin/meteoswiss.png",
+    "readme": "https://github.com/deMynchi/ioBroker.meteoswiss/blob/master/README.md",
+    "loglevel": "info",
+    "tier": 3,
+    "mode": "daemon",
+    "type": "weather",
+    "compact": true,
+    "connectionType": "cloud",
+    "dataSource": "poll",
+    "messagebox": true,
+    "adminUI": {
+      "config": "json"
+    },
+    "dependencies": [
+      {
+        "js-controller": ">=6.0.11"
+      }
+    ],
+    "globalDependencies": [
+      {
+        "admin": ">=7.0.23"
+      }
     ]
+  },
+  "native": {
+    "language": "de",
+    "zips": [],
+    "stations": []
+  },
+  "objects": [],
+  "instanceObjects": [
+    {
+      "_id": "info",
+      "type": "channel",
+      "common": {
+        "name": "Information"
+      },
+      "native": {}
+    },
+    {
+      "_id": "info.connection",
+      "type": "state",
+      "common": {
+        "role": "indicator.connected",
+        "name": "Device or service connected",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    }
+  ]
 }
