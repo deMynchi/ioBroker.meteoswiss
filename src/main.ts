@@ -1,27 +1,24 @@
 /*
- * Created with @iobroker/create-adapter v1.32.0
+ * Created with @iobroker/create-adapter v3.1.2
  */
 
 // The adapter-core module gives you access to the core ioBroker functions
 // you need to create an adapter
 import * as utils from '@iobroker/adapter-core';
-import axios, { AxiosInstance } from 'axios';
+import type { AxiosInstance } from 'axios';
+import axios from 'axios';
 import { createWriteStream, ensureDir } from 'fs-extra';
-import path from 'path';
-import { listen, register } from 'push-receiver';
-import { Database, open } from 'sqlite';
-import sqlite3 from 'sqlite3';
-import { Db, Push, Rest } from './meteoswiss';
+import { join } from 'path';
+import type { Database } from 'sqlite';
+import { open } from 'sqlite';
+import * as sqlite3 from 'sqlite3';
+import type { Db, Rest } from './meteoswiss';
 
 const STATIC_BASE_URL = 'https://s3-eu-central-1.amazonaws.com/app-prod-static-fra.meteoswiss-app.ch/v1/';
 const DYNAMIC_BASE_URL = 'https://app-prod-ws.meteoswiss-app.ch/v3/';
 const USER_AGENT = 'Android-30 ch.admin.meteoswiss-3420';
-const GCM_SENDER_ID = '678360867444';
 const WEATHER_ICON_URL_FORMAT = 'https://cdn.jsdelivr.net/npm/meteo-icons/icons/weathericon_%s.png';
 const WARNING_ICON_URL_FORMAT = 'https://cdn.jsdelivr.net/npm/meteo-icons/icons/bulletinwebicon_type%s_level%s.png';
-
-const STATE_ID_GCM = 'info.gcm';
-const STATE_ID_GCM_PERSISTENCE = 'info.gcm-ids';
 
 interface WarningCategory {
     id: number;
@@ -98,9 +95,9 @@ function toNumber(value?: number): number | undefined {
     return value === 32767 ? undefined : value;
 }
 
-function parseNumber(value: string | undefined): number | undefined {
+/*function parseNumber(value: string | undefined): number | undefined {
     return value === undefined ? undefined : parseInt(value);
-}
+}*/
 
 function getDayName(offset: number): string {
     return offset === 0 ? 'Today' : offset === 1 ? 'Tomorrow' : `Today +${offset}`;
@@ -112,7 +109,7 @@ function toWeatherIconUrl(icon?: number): string | undefined {
     }
     let num = icon.toString();
     while (num.length < 3) {
-        num = '0' + num;
+        num = `0${num}`;
     }
     return WEATHER_ICON_URL_FORMAT.replace('%s', num);
 }
@@ -127,20 +124,12 @@ function minutes(minutes: number): number {
     return minutes * 60 * 1000;
 }
 
-interface GetDataResponse {
-    error?: any;
-    data?: {
-        zips: Record<number, string>;
-        stations: Record<string, string>;
-    };
-}
+type GetDataResponse = { value: string; label: string }[];
 
 class MeteoSwiss extends utils.Adapter {
     private axios!: AxiosInstance;
     private database!: Database<sqlite3.Database, sqlite3.Statement>;
     private refreshTimer?: NodeJS.Timeout;
-
-    private readonly persistentIds: string[] = [];
 
     public constructor(options: Partial<utils.AdapterOptions> = {}) {
         super({
@@ -156,10 +145,10 @@ class MeteoSwiss extends utils.Adapter {
      * Is called when databases are connected and adapter received configuration.
      */
     private async onReady(): Promise<void> {
-        // Initialize your adapter here
-
         // Reset the connection indicator during startup
-        this.setState('info.connection', false, true);
+        await this.setState('info.connection', false, true);
+
+        await this.migrateConfig();
 
         this.axios = axios.create({
             headers: {
@@ -172,19 +161,16 @@ class MeteoSwiss extends utils.Adapter {
 
         await this.ensureDatabase();
 
-        // Currently FCM is no longer supported by push-receiver:
-        // https://github.com/MatthieuLemoine/push-receiver/issues/68
-        // And we don't have all information required by https://aracna.dariosechi.it/fcm/get-started/
-        // await this.ensureRegistration();
-
         await this.createObjects();
     }
 
     /**
      * Is called when adapter shuts down - callback has to be called under any circumstances!
+     *
+     * @param callback Callback function to signal that adapter shutdown is finished.
      */
     private onUnload(callback: () => void): void {
-        this.unload().finally(callback);
+        this.unload().finally(callback).catch(console.error);
     }
 
     private async unload(): Promise<void> {
@@ -194,55 +180,55 @@ class MeteoSwiss extends utils.Adapter {
         await this.closeDatabase();
     }
 
-    /**
-     * Some message was sent to this instance over message box. Used by email, pushover, text2speech, ...
-     * Using this method requires "common.messagebox" property to be set to true in io-package.json
-     */
     private onMessage(msg: ioBroker.Message): void {
         // this.log.info('onMessage() :' + JSON.stringify(msg));
-        if (
-            typeof msg === 'object' &&
-            msg.command === 'getData' &&
-            msg.callback &&
-            msg.from &&
-            msg.from.startsWith('system.adapter.admin')
-        ) {
-            this.handleGetDataMessage()
-                .then((response) => this.sendTo(msg.from, msg.command, response, msg.callback))
-                .catch((e) => {
-                    this.log.warn(`Couldn't handle getData message: ${e}`);
-                    this.sendTo(msg.from, msg.command, { error: e || 'No data' }, msg.callback);
-                });
+        if (typeof msg === 'object' && msg.callback && msg.from && msg.from.startsWith('system.adapter.admin')) {
+            if (msg.command === 'getZipCodes') {
+                this.getZipCodes()
+                    .then(response => this.sendTo(msg.from, msg.command, response, msg.callback))
+                    .catch(e => {
+                        this.log.warn(`Couldn't handle getZipCodes message: ${e}`);
+                        this.sendTo(msg.from, msg.command, [], msg.callback);
+                    });
+            } else if (msg.command === 'getStations') {
+                this.getStations()
+                    .then(response => this.sendTo(msg.from, msg.command, response, msg.callback))
+                    .catch(e => {
+                        this.log.warn(`Couldn't handle getStations message: ${e}`);
+                        this.sendTo(msg.from, msg.command, [], msg.callback);
+                    });
+            }
         }
     }
 
-    private async handleGetDataMessage(): Promise<GetDataResponse> {
+    private async getZipCodes(): Promise<GetDataResponse> {
         await this.ensureDatabase();
 
-        const plzs = await this.database.all<Db.Plz[]>('SELECT plz_pk, primary_name FROM plz');
-        const weatherstations = await this.database.all<Db.Wetterstation[]>(
-            'SELECT station_pk, name FROM wetterstation',
-        );
+        const zipCodes = await this.database.all<Db.Plz[]>('SELECT plz_pk, primary_name FROM plz WHERE active = 1');
+        return zipCodes.map(row => {
+            const subcode = row.plz_pk % 100 ? ` (${row.plz_pk % 100})` : '';
+            return {
+                value: row.plz_pk.toFixed(0),
+                label: `${Math.floor(row.plz_pk / 100)} ${row.primary_name}${subcode}`,
+            };
+        }, {});
+    }
 
-        return {
-            data: {
-                zips: plzs.reduce<Record<number, string>>(function (map, row) {
-                    map[row.plz_pk] = row.primary_name;
-                    return map;
-                }, {}),
-                stations: weatherstations.reduce<Record<string, string>>(function (map, row) {
-                    map[row.station_pk] = row.name;
-                    return map;
-                }, {}),
-            },
-        };
+    private async getStations(): Promise<GetDataResponse> {
+        await this.ensureDatabase();
+
+        const stations = await this.database.all<Db.Wetterstation[]>('SELECT station_pk, name FROM wetterstation');
+
+        return stations.map(row => {
+            return { value: row.station_pk, label: `${row.name} (${row.station_pk})` };
+        });
     }
 
     private async ensureDatabase(): Promise<void> {
         const baseDir = utils.getAbsoluteInstanceDataDir(this);
         await ensureDir(baseDir);
 
-        const filename = path.join(baseDir, 'db.sqlite');
+        const filename = join(baseDir, 'db.sqlite');
         try {
             if (!this.database) {
                 await this.openDatabase(filename);
@@ -257,7 +243,7 @@ class MeteoSwiss extends utils.Adapter {
             }
 
             this.log.debug(`Outdated local database: ${metadata?.version} <> ${info.dbVersion}`);
-        } catch (error) {
+        } catch (error: any) {
             this.log.debug(`Couldn't open local database ${filename}: ${error}`);
         }
 
@@ -279,67 +265,15 @@ class MeteoSwiss extends utils.Adapter {
         if (this.database) {
             try {
                 await this.database.close();
-            } catch (error) {
+            } catch (error: any) {
                 this.log.debug(`Couldn't close database: ${error}`);
             }
         }
     }
 
-    private async ensureRegistration(): Promise<void> {
-        try {
-            await this.ensureState(STATE_ID_GCM, 'GCM Credentials', 'object', 'json');
-            await this.ensureState(STATE_ID_GCM_PERSISTENCE, 'GCM Persistent IDs', 'array', 'json');
-            const currentCredentials = await this.getStateAsync(STATE_ID_GCM);
-            let credentials;
-            if (typeof currentCredentials?.val === 'string') {
-                credentials = JSON.parse(currentCredentials.val);
-            } else {
-                credentials = await register(GCM_SENDER_ID);
-                await this.updateValue(STATE_ID_GCM, JSON.stringify(credentials));
-            }
-            this.log.debug(`GCM: ${JSON.stringify(credentials)}`);
-
-            const plzs = await Promise.all(
-                this.config.zips.map((zip) => this.database.get<Db.Plz>('SELECT * FROM plz WHERE plz_pk = ?', [zip])),
-            );
-
-            const uuid = await this.getForeignObjectAsync('system.meta.uuid');
-            const subscription = {
-                pushToken: credentials.fcm.token,
-                userId: uuid?.native?.uuid,
-                type: 1, // no clue...
-                subscription: plzs
-                    .filter((plz) => !!plz)
-                    .map((plz, index) => ({
-                        plz: plz!.plz_pk,
-                        name: plz!.primary_name,
-                        index,
-                        config: WARNINGS.filter((w) => w.minimumLevel).map((w) => ({
-                            warnLevel: w.minimumLevel,
-                            warnType: w.id,
-                            withOutlook: true,
-                        })),
-                    })),
-            };
-            this.log.debug(`Subscription: ${JSON.stringify(subscription)}`);
-            await this.axios.post(`${DYNAMIC_BASE_URL}register`, subscription);
-
-            const currentPersistence = await this.getStateAsync(STATE_ID_GCM_PERSISTENCE);
-            if (typeof currentPersistence?.val === 'string') {
-                this.persistentIds.push(...JSON.parse(currentPersistence.val));
-            }
-
-            await listen({ ...credentials, persistentIds: this.persistentIds }, (evt: any) =>
-                this.handleGcmNotification(evt).catch((e) => this.log.error(`Couldn't handle GCM notification: ${e}`)),
-            );
-        } catch (error) {
-            this.log.error(`Couldn't register to GCM: ${error}`);
-        }
-    }
-
     private async createObjects(): Promise<void> {
         for (let i = this.config.zips.length - 1; i >= 0; i--) {
-            const zip = this.config.zips[i];
+            const zip = this.config.zips[i].zip;
             try {
                 this.log.debug(`Creating objects for ${zip}`);
                 const plz = await this.database.get<Db.Plz>('SELECT * FROM plz WHERE plz_pk = ?', [zip]);
@@ -347,14 +281,14 @@ class MeteoSwiss extends utils.Adapter {
                     throw new Error(`Couldn't find PLZ ${zip}`);
                 }
                 await this.ensureDevice(zip.toString(), plz.primary_name);
-            } catch (error) {
+            } catch {
                 this.log.warn(`Couldn't create objects for ${zip}, not polling its values`);
                 this.config.zips.splice(i, 1);
             }
         }
 
         for (let i = this.config.stations.length - 1; i >= 0; i--) {
-            const station = this.config.stations[i];
+            const station = this.config.stations[i].id;
             try {
                 this.log.debug(`Creating objects for ${station}`);
                 const wetterstation = await this.database.get<Db.Wetterstation>(
@@ -365,7 +299,7 @@ class MeteoSwiss extends utils.Adapter {
                     throw new Error(`Couldn't find station ${station}`);
                 }
                 await this.ensureDevice(station, `Station ${wetterstation.name}`);
-            } catch (error) {
+            } catch {
                 this.log.warn(`Couldn't create objects for ${station}, not polling its values`);
                 this.config.stations.splice(i, 1);
             }
@@ -380,7 +314,7 @@ class MeteoSwiss extends utils.Adapter {
         let timeout = 0;
         try {
             for (let i = 0; i < this.config.zips.length; i++) {
-                const zip = this.config.zips[i];
+                const zip = this.config.zips[i].zip;
                 await this.updateZip(zip, firstRun);
             }
 
@@ -393,10 +327,11 @@ class MeteoSwiss extends utils.Adapter {
             timeout = lastUpdate + minutes(11) - now;
 
             for (let i = 0; i < this.config.stations.length; i++) {
-                const station = this.config.stations[i];
+                const station = this.config.stations[i].id;
                 await this.updateStation(station, currentWeather.data[station] || {}, firstRun);
             }
-        } catch (error) {
+        } catch (error: any) {
+            console.error(error);
             this.log.error(`Update error ${error}`);
         }
 
@@ -411,7 +346,7 @@ class MeteoSwiss extends utils.Adapter {
 
     private refresh(): void {
         this.log.info('Refreshing data');
-        this.updateStates(false).catch((e) => this.log.error(`Update error ${e}`));
+        this.updateStates(false).catch(e => this.log.error(`Update error ${e}`));
     }
 
     private async updateZip(zip: number, firstRun: boolean): Promise<void> {
@@ -471,7 +406,7 @@ class MeteoSwiss extends utils.Adapter {
                 );
             }
 
-            const forecast = detail.forecast[day];
+            const forecast = detail.forecast?.[day];
             await this.updateValue(`${channel}.date`, forecast?.dayDate);
             await this.updateValue(`${channel}.icon`, forecast?.iconDay);
             await this.updateValue(`${channel}.iconUrl`, toWeatherIconUrl(forecast?.iconDay));
@@ -487,7 +422,7 @@ class MeteoSwiss extends utils.Adapter {
             for (let hour = 0; hour < 24; hour += 3) {
                 const index1h = day * 24 + hour;
                 const index3h = index1h / 3;
-                const h = hour > 9 ? hour.toString() : '0' + hour;
+                const h = hour > 9 ? hour.toString() : `0${hour}`;
                 const channel = `${zip}.day-${day}-hour-${h}`;
                 if (firstRun) {
                     await this.ensureChannel(channel, `${getDayName(day)} @ ${h}:00`);
@@ -530,6 +465,10 @@ class MeteoSwiss extends utils.Adapter {
                         'value.precipitation',
                         'mm',
                     );
+                }
+
+                if (!detail.graph) {
+                    continue;
                 }
 
                 const offset = (day * 24 + hour) * minutes(60);
@@ -593,56 +532,16 @@ class MeteoSwiss extends utils.Adapter {
             }
 
             let warning: Rest.Warning | undefined;
-            const warnings = detail.warnings.filter((w) => w.warnType === category.id);
+            const warnings = detail.warnings.filter(w => w.warnType === category.id);
             warnings.sort((a, b) => b.warnLevel - a.warnLevel);
             if (warnings.length === 1) {
                 warning = warnings[0];
             } else if (warnings.length > 1) {
-                warning = warnings.find((w) => !w.outlook) || warnings[0];
+                warning = warnings.find(w => !w.outlook) || warnings[0];
             }
 
             await this.updateWarning(channel, category.id.toString(), warning);
         }
-    }
-
-    private async handleGcmNotification(evt: { persistentId: string; notification: Push.Warning }): Promise<void> {
-        const { notification, persistentId } = evt;
-        // Update list of persistentId
-
-        this.persistentIds.push(persistentId);
-        await this.updateValue(STATE_ID_GCM_PERSISTENCE, JSON.stringify(this.persistentIds));
-
-        this.log.debug(`Notification: ${JSON.stringify(notification)}`);
-
-        const warning = notification.data;
-        const channel = `${warning.plz}.warning-${warning.warnType.padStart(2, '0')}`;
-        const states = await this.getStatesAsync(`${channel}.*`);
-        if (!states || Object.keys(states).length === 0) {
-            throw new Error(`Received warning ${warning.warnType} for ${warning.plz}, but couldn't find channel.`);
-        }
-
-        const currentLevel = states[`${channel}.level`];
-        if (typeof currentLevel?.val === 'number' && currentLevel.val > parseInt(warning.warnLevel)) {
-            // the received warning has a lower level
-            const currentOutlook = states[`${channel}.outlook`];
-            if (currentOutlook?.val !== true || warning.outlook === 'true') {
-                // only allow for lower level if the received warning is not outlook and the existing one is
-                this.log.debug(`Ignoring warning ${warning.warnType} for ${warning.plz} because of lower level`);
-                return;
-            }
-        }
-
-        await this.updateWarning(channel, warning.warnType, {
-            warnType: parseInt(warning.warnType),
-            warnLevel: parseInt(warning.warnLevel),
-            text: warning.warnText,
-            validFrom: parseNumber(warning.validFrom),
-            validTo: parseNumber(warning.validTo),
-            ordering: warning.ordering,
-            htmlText: warning.warnText,
-            outlook: warning.outlook === 'true',
-            links: [],
-        });
     }
 
     private async updateWarning(channel: string, type: string, warning?: Rest.Warning): Promise<void> {
@@ -687,9 +586,17 @@ class MeteoSwiss extends utils.Adapter {
             f,
         );
 
-        await this.updateMsmt(s, m.sunshineTotal, 'sunshineTotal', 'Sunshine Total', 'value', 'min', f);
-        await this.updateMsmt(s, m.sunshineYesterday, 'sunshineYesterday', 'Sunshine Yesterday', 'value', 'min', f);
-        await this.updateMsmt(
+        await this.updateMeasurement(s, m.sunshineTotal, 'sunshineTotal', 'Sunshine Total', 'value', 'min', f);
+        await this.updateMeasurement(
+            s,
+            m.sunshineYesterday,
+            'sunshineYesterday',
+            'Sunshine Yesterday',
+            'value',
+            'min',
+            f,
+        );
+        await this.updateMeasurement(
             s,
             m.precipitation1H,
             'precipitation1H',
@@ -698,7 +605,7 @@ class MeteoSwiss extends utils.Adapter {
             'mm',
             f,
         );
-        await this.updateMsmt(
+        await this.updateMeasurement(
             s,
             m.precipitationYesterday,
             'precipitationYesterday',
@@ -707,7 +614,7 @@ class MeteoSwiss extends utils.Adapter {
             'mm',
             f,
         );
-        await this.updateMsmt(
+        await this.updateMeasurement(
             s,
             m.precipitation24H,
             'precipitation24H',
@@ -716,7 +623,7 @@ class MeteoSwiss extends utils.Adapter {
             'mm',
             f,
         );
-        await this.updateMsmt(
+        await this.updateMeasurement(
             s,
             m.precipitation48H,
             'precipitation48H',
@@ -725,7 +632,7 @@ class MeteoSwiss extends utils.Adapter {
             'mm',
             f,
         );
-        await this.updateMsmt(
+        await this.updateMeasurement(
             s,
             m.precipitation72H,
             'precipitation72H',
@@ -737,7 +644,7 @@ class MeteoSwiss extends utils.Adapter {
 
         await this.updateValueTime(s, m.windGustMax, 'windGustMax', 'Wind Gust Max', 'value.speed.wind', 'km/h', f);
 
-        await this.updateMsmt(
+        await this.updateMeasurement(
             s,
             m.pressureDifference3H,
             'pressureDifference3H',
@@ -746,20 +653,28 @@ class MeteoSwiss extends utils.Adapter {
             'hPa',
             f,
         );
-        await this.updateMsmt(s, m.pressure850, 'pressure850', 'Pressure 850', 'value.pressure', 'hPa', f);
-        await this.updateMsmt(s, m.pressure700, 'pressure700', 'Pressure 700', 'value.pressure', 'hPa', f);
+        await this.updateMeasurement(s, m.pressure850, 'pressure850', 'Pressure 850', 'value.pressure', 'hPa', f);
+        await this.updateMeasurement(s, m.pressure700, 'pressure700', 'Pressure 700', 'value.pressure', 'hPa', f);
 
-        await this.updateMsmt(s, m.snow2D, 'snow2D', 'Snow 2 Days', 'value', 'cm', f);
-        await this.updateMsmt(s, m.snow3D, 'snow3D', 'Snow 3 Days', 'value', 'cm', f);
+        await this.updateMeasurement(s, m.snow2D, 'snow2D', 'Snow 2 Days', 'value', 'cm', f);
+        await this.updateMeasurement(s, m.snow3D, 'snow3D', 'Snow 3 Days', 'value', 'cm', f);
 
-        await this.updateMsmt(s, m.dewPoint, 'dewPoint', 'Dew Point', 'value.temperature', '°C', f);
+        await this.updateMeasurement(s, m.dewPoint, 'dewPoint', 'Dew Point', 'value.temperature', '°C', f);
 
-        await this.updateMsmt(s, m.windSpeed, 'windSpeed', 'Wind Speed', 'value.speed.wind', 'km/h', f);
+        await this.updateMeasurement(s, m.windSpeed, 'windSpeed', 'Wind Speed', 'value.speed.wind', 'km/h', f);
 
-        await this.updateMsmt(s, m.precipitation, 'precipitation', 'Precipitation', 'value.precipitation', 'mm', f);
-        await this.updateMsmt(s, m.humidity, 'humidity', 'Humidity', 'value.humidity', '%', f);
+        await this.updateMeasurement(
+            s,
+            m.precipitation,
+            'precipitation',
+            'Precipitation',
+            'value.precipitation',
+            'mm',
+            f,
+        );
+        await this.updateMeasurement(s, m.humidity, 'humidity', 'Humidity', 'value.humidity', '%', f);
 
-        await this.updateMsmt(
+        await this.updateMeasurement(
             s,
             m.pressureSea,
             'pressureSea',
@@ -768,7 +683,7 @@ class MeteoSwiss extends utils.Adapter {
             'hPa',
             f,
         );
-        await this.updateMsmt(
+        await this.updateMeasurement(
             s,
             m.pressureStandard,
             'pressureStandard',
@@ -777,7 +692,7 @@ class MeteoSwiss extends utils.Adapter {
             'hPa',
             f,
         );
-        await this.updateMsmt(
+        await this.updateMeasurement(
             s,
             m.pressureStation,
             'pressureStation',
@@ -787,8 +702,16 @@ class MeteoSwiss extends utils.Adapter {
             f,
         );
 
-        await this.updateMsmt(s, m.windDirection, 'windDirection', 'Wind Direction', 'value.direction.wind', '°', f);
-        await this.updateMsmt(s, m.windGust, 'windGust', 'Wind Gust', 'value.speed.wind', 'km/h', f);
+        await this.updateMeasurement(
+            s,
+            m.windDirection,
+            'windDirection',
+            'Wind Direction',
+            'value.direction.wind',
+            '°',
+            f,
+        );
+        await this.updateMeasurement(s, m.windGust, 'windGust', 'Wind Gust', 'value.speed.wind', 'km/h', f);
 
         await this.updateValueTime(
             s,
@@ -809,12 +732,12 @@ class MeteoSwiss extends utils.Adapter {
             f,
         );
 
-        await this.updateMsmt(s, m.temperature, 'temperature', 'Temperature', 'value.temperature', '°C', f);
+        await this.updateMeasurement(s, m.temperature, 'temperature', 'Temperature', 'value.temperature', '°C', f);
 
         f && (await this.ensureState(`${s}.smnTime`, 'Time', 'string', 'date'));
         await this.updateValue(`${s}.smnTime`, toDateStr(m.smnTime));
 
-        await this.updateMsmt(s, m.sunshine, 'sunshine', 'Sunshine', 'value', 'min', f);
+        await this.updateMeasurement(s, m.sunshine, 'sunshine', 'Sunshine', 'value', 'min', f);
 
         await this.updateValueTime(
             s,
@@ -855,7 +778,7 @@ class MeteoSwiss extends utils.Adapter {
         await this.updateValue(`${channel}.value`, toNumber(tuple.value));
     }
 
-    private async updateMsmt(
+    private async updateMeasurement(
         station: string,
         value: number | undefined,
         id: string,
@@ -950,6 +873,41 @@ class MeteoSwiss extends utils.Adapter {
             value = null;
         }
         await this.setStateAsync(id, value, true);
+    }
+
+    private async migrateConfig(): Promise<void> {
+        let changed = false;
+
+        if (!Array.isArray(this.config.zips)) {
+            this.config.zips = [];
+            changed = true;
+        }
+
+        for (let i = 0; i < this.config.zips.length; i++) {
+            const zip = this.config.zips[i];
+            if (typeof zip === 'number') {
+                this.config.zips[i] = { zip };
+                changed = true;
+            }
+        }
+
+        if (!Array.isArray(this.config.stations)) {
+            this.config.stations = [];
+            changed = true;
+        }
+
+        for (let i = 0; i < this.config.stations.length; i++) {
+            const station = this.config.stations[i];
+            if (typeof station === 'string') {
+                this.config.stations[i] = { id: station };
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            this.log.info('Migrated configuration to new format');
+            await this.updateConfig(this.config);
+        }
     }
 }
 

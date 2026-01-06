@@ -1,0 +1,8 @@
+{
+    "adapterNotRunning": "Die Auswahl von Ortschaften und Wetterstationen ist nur bei laufendem Adapter möglich.",
+    "language": "Sprache",
+    "station": "Stationsname (ID)",
+    "stations": "Wetterstationen",
+    "zipCode": "PLZ / Ort",
+    "zips": "Ortschaften"
+}

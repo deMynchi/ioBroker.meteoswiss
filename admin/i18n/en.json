@@ -1,0 +1,8 @@
+{
+    "language": "Language",
+    "zips": "Locations",
+    "zipCode": "Zip Code / Name",
+    "stations": "Weather Stations",
+    "station": "Station Name (ID)",
+    "adapterNotRunning": "Selection of locations and weather stations is only possible when the adapter is running."
+}

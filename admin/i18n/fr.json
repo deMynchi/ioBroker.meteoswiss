@@ -1,0 +1,8 @@
+{
+    "adapterNotRunning": "La sélection des emplacements et des stations météo n'est possible que lorsque l'adaptateur est en cours d'exécution.",
+    "language": "Langue",
+    "station": "Nom de la station (ID)",
+    "stations": "Stations météo",
+    "zipCode": "Code postal / Lieu",
+    "zips": "Lieux"
+}

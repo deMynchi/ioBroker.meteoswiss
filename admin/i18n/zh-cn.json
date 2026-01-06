@@ -1,0 +1,8 @@
+{
+    "adapterNotRunning": "仅当适配器运行时才能选择位置和气象站。",
+    "language": "语言",
+    "station": "站名（ID）",
+    "stations": "气象站",
+    "zipCode": "邮政编码/姓名",
+    "zips": "地点"
+}

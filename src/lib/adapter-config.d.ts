@@ -1,12 +1,12 @@
-// This file extends the AdapterConfig type from "@types/iobroker"
+// This file extends the AdapterConfig type from "@iobroker/types"
 
 // Augment the globally declared type ioBroker.AdapterConfig
 declare global {
     namespace ioBroker {
         interface AdapterConfig {
             language: string;
-            zips: number[];
-            stations: string[];
+            zips: { zip: number }[];
+            stations: { id: string }[];
         }
     }
 }

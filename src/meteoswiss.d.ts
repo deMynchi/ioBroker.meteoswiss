@@ -62,10 +62,10 @@ export namespace Rest {
 
     export interface PlzDetail {
         currentWeather: CurrentPlzWeather;
-        forecast: Forecast[];
+        forecast?: Forecast[];
         warnings: Warning[];
         warningsOverview: WarningsOverview[];
-        graph: Graph;
+        graph?: Graph;
     }
 
     export interface ValueTime {
@@ -140,8 +140,6 @@ export namespace Db {
         name: string;
         zoomLevel: number;
         orientation: number;
-        zoomLevel: number;
-        orientation: number;
         temperature: number;
         sunshine: number;
         precipitation: number;
@@ -152,22 +150,22 @@ export namespace Db {
         pressure: number;
         active: number;
         hasImage: number;
-        temperature_since: ?number;
-        sunshine_since: ?number;
-        precipitation_since: ?number;
-        humidity_since: ?number;
-        foehn_since: ?number;
-        wind_since: ?number;
-        snow_since: ?number;
-        pressure_since: ?number;
-        specials_de: ?string;
-        specials_fr: ?string;
-        specials_it: ?string;
-        specials_en: ?string;
-        additional_de: ?string;
-        additional_fr: ?string;
-        additional_it: ?string;
-        additional_en: ?string;
+        temperature_since?: number;
+        sunshine_since?: number;
+        precipitation_since?: number;
+        humidity_since?: number;
+        foehn_since?: number;
+        wind_since?: number;
+        snow_since?: number;
+        pressure_since?: number;
+        specials_de?: string;
+        specials_fr?: string;
+        specials_it?: string;
+        specials_en?: string;
+        additional_de?: string;
+        additional_fr?: string;
+        additional_it?: string;
+        additional_en?: string;
     }
 }
 

@@ -1,0 +1,8 @@
+{
+    "adapterNotRunning": "Wybór lokalizacji i stacji pogodowych jest możliwy tylko przy uruchomionym adapterze.",
+    "language": "Język",
+    "station": "Nazwa stacji (ID)",
+    "stations": "Stacje pogodowe",
+    "zipCode": "Kod pocztowy / nazwa",
+    "zips": "Lokalizacje"
+}

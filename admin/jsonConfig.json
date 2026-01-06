@@ -1,0 +1,79 @@
+{
+    "i18n": true,
+    "type": "panel",
+    "items": {
+        "language": {
+            "type": "select",
+            "label": "language",
+            "xs": 12,
+            "sm": 12,
+            "md": 6,
+            "lg": 4,
+            "xl": 4,
+            "options": [
+                {
+                    "value": "de",
+                    "label": "Deutsch"
+                },
+                {
+                    "value": "fr",
+                    "label": "Français"
+                },
+                {
+                    "value": "it",
+                    "label": "Italiano"
+                },
+                {
+                    "value": "en",
+                    "label": "English"
+                }
+            ]
+        },
+        "_alive": {
+            "type": "alive",
+            "textAlive": " ",
+            "textNotAlive": "adapterNotRunning"
+        },
+        "zips": {
+            "type": "table",
+            "xs": 12,
+            "sm": 12,
+            "md": 12,
+            "lg": 6,
+            "xl": 6,
+            "label": "zips",
+            "newLine": true,
+            "noMultiEdit": true,
+            "allowSaveWithError": false,
+            "default": [],
+            "uniqueColumns": ["zip"],
+            "items": [
+                {
+                    "type": "autocompleteSendTo",
+                    "command": "getZipCodes",
+                    "attr": "zip",
+                    "title": "zipCode",
+                    "default": "300005"
+                }
+            ]
+        },
+        "stations": {
+            "type": "table",
+            "xs": 12,
+            "sm": 12,
+            "md": 12,
+            "lg": 6,
+            "xl": 6,
+            "label": "stations",
+            "items": [
+                {
+                    "type": "autocompleteSendTo",
+                    "command": "getStations",
+                    "attr": "id",
+                    "title": "station",
+                    "default": "BER"
+                }
+            ]
+        }
+    }
+}

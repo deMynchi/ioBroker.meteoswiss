@@ -1,0 +1,8 @@
+{
+    "adapterNotRunning": "La selezione dei luoghi e delle stazioni meteorologiche è possibile solo quando l'adattatore è in funzione.",
+    "language": "Lingua",
+    "station": "Nome della stazione (ID)",
+    "stations": "Stazioni meteo",
+    "zipCode": "Codice postale / Località",
+    "zips": "Località"
+}

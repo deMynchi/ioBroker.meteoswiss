@@ -13,7 +13,8 @@
                 "it": "Risolto il problema per cui a volte venivano visualizzati testi di avviso errati quando sono presenti più avvisi di diverse categorie.",
                 "es": "Problema solucionado donde a veces se mostraban los textos de advertencia incorrectos cuando hay múltiples advertencias de diferentes categorías.",
                 "pl": "Naprawiono problem polegający na tym, że czasami wyświetlały się nieprawidłowe teksty ostrzeżeń, gdy istnieje wiele ostrzeżeń z różnych kategorii.",
-                "zh-cn": "修复了当有来自不同类别的多个警告时有时会显示错误警告文本的问题。"
+                "zh-cn": "修复了当有来自不同类别的多个警告时有时会显示错误警告文本的问题。",
+                "uk": "Виправлено проблему, через яку іноді відображалися неправильні тексти попереджень, коли було кілька попереджень із різних категорій."
             },
             "0.2.0": {
                 "en": "Added warnings for PLZ entries.",
@@ -25,7 +26,8 @@
                 "it": "Aggiunti avvisi per le voci PLZ.",
                 "es": "Se agregaron advertencias para las entradas de PLZ.",
                 "pl": "Dodano ostrzeżenia dla wpisów PLZ.",
-                "zh-cn": "为 PLZ 条目添加了警告。"
+                "zh-cn": "为 PLZ 条目添加了警告。",
+                "uk": "Додано попередження для записів PLZ."
             },
             "0.1.2": {
                 "en": "Fixed connection state always yellow.",
@@ -37,7 +39,8 @@
                 "it": "Stato di connessione fisso sempre giallo.",
                 "es": "Estado de conexión fija siempre amarillo.",
                 "pl": "Stały stan połączenia zawsze żółty.",
-                "zh-cn": "固定连接状态始终为黄色。"
+                "zh-cn": "固定连接状态始终为黄色。",
+                "uk": "Фіксований стан підключення завжди жовтий."
             },
             "0.1.1": {
                 "en": "Fixed initial download of sqlite db that was broken",
@@ -49,7 +52,8 @@
                 "it": "Risolto il problema con il download iniziale di sqlite db che non funzionava",
                 "es": "Se corrigió la descarga inicial de sqlite db que estaba rota",
                 "pl": "Naprawiono początkowe pobieranie sqlite db, który był uszkodzony",
-                "zh-cn": "修复了损坏的sqlite db的初始下载"
+                "zh-cn": "修复了损坏的sqlite db的初始下载",
+                "uk": "Виправлено початкове завантаження бази даних sqlite, яка була зламана"
             },
             "0.1.0": {
                 "en": "initial release",
@@ -61,54 +65,72 @@
                 "it": "Versione iniziale",
                 "es": "Versión inicial",
                 "pl": "Pierwsze wydanie",
-                "zh-cn": "首次出版"
+                "zh-cn": "首次出版",
+                "uk": "початковий випуск"
             }
         },
-        "title": "MeteoSwiss",
         "titleLang": {
             "en": "MeteoSwiss",
-            "de": "MeteoSwiss",
+            "de": "MeteoSchweiz",
             "ru": "MeteoSwiss",
             "pt": "MeteoSwiss",
             "nl": "MeteoSwiss",
-            "fr": "MeteoSwiss",
-            "it": "MeteoSwiss",
+            "fr": "MétéoSuisse",
+            "it": "MeteoSvizzera",
             "es": "MeteoSwiss",
             "pl": "MeteoSwiss",
+            "uk": "MeteoSwiss",
             "zh-cn": "MeteoSwiss"
         },
         "desc": {
             "en": "Provides weather information from MeteoSwiss",
-            "de": "Provides weather information from MeteoSwiss",
-            "ru": "Provides weather information from MeteoSwiss",
-            "pt": "Provides weather information from MeteoSwiss",
-            "nl": "Provides weather information from MeteoSwiss",
-            "fr": "Provides weather information from MeteoSwiss",
-            "it": "Provides weather information from MeteoSwiss",
-            "es": "Provides weather information from MeteoSwiss",
-            "pl": "Provides weather information from MeteoSwiss",
-            "zh-cn": "Provides weather information from MeteoSwiss"
+            "de": "Bietet Wetterinformationen von MeteoSchweiz",
+            "ru": "Предоставляет информацию о погоде от MeteoSwiss.",
+            "pt": "Fornece informações meteorológicas do MeteoSwiss",
+            "nl": "Biedt weerinformatie van MeteoSwiss",
+            "fr": "Fournit des informations météorologiques de MétéoSuisse",
+            "it": "Fornisce informazioni meteorologiche di MeteoSvizzera",
+            "es": "Proporciona información meteorológica de MeteoSwiss.",
+            "pl": "Dostarcza informacji o pogodzie z MeteoSwiss",
+            "uk": "Надає інформацію про погоду від MeteoSwiss",
+            "zh-cn": "提供来自 MeteoSwiss 的天气信息"
         },
-        "authors": ["deMynchi"],
-        "keywords": ["weather", "meteo", "switzerland"],
-        "license": "MIT",
+        "authors": [
+            "deMynchi"
+        ],
+        "keywords": [
+            "weather",
+            "meteo",
+            "switzerland"
+        ],
+        "licenseInformation": {
+            "type": "free",
+            "license": "MIT"
+        },
         "platform": "Javascript/Node.js",
-        "main": "build/main.js",
         "icon": "meteoswiss.png",
         "enabled": true,
         "extIcon": "https://raw.githubusercontent.com/deMynchi/ioBroker.meteoswiss/master/admin/meteoswiss.png",
         "readme": "https://github.com/deMynchi/ioBroker.meteoswiss/blob/master/README.md",
         "loglevel": "info",
+        "tier": 3,
         "mode": "daemon",
         "type": "weather",
         "compact": true,
         "connectionType": "cloud",
         "dataSource": "poll",
-        "materialize": true,
         "messagebox": true,
+        "adminUI": {
+            "config": "json"
+        },
         "dependencies": [
             {
-                "js-controller": ">=2.0.0"
+                "js-controller": ">=6.0.11"
+            }
+        ],
+        "globalDependencies": [
+            {
+                "admin": ">=7.0.23"
             }
         ]
     },

@@ -1,17 +1,19 @@
-.git
-.dev-server
-.idea
+# No dot-directories except github/vscode
+.*/
+!.vscode/
+!.github/
+!.devcontainer/
+
 *.code-workspace
 node_modules
 nbproject
-
-# Sourcemaps
-maps/
 
 # npm package files
 iobroker.*.tgz
 
 Thumbs.db
+.commitinfo
+db.sqlite
 
 # i18n intermediate files
 admin/i18n/flat.txt

@@ -1,0 +1,8 @@
+{
+    "adapterNotRunning": "Selectie van locaties en weerstations is alleen mogelijk als de adapter actief is.",
+    "language": "Taal",
+    "station": "Stationsnaam (ID)",
+    "stations": "Weerstations",
+    "zipCode": "Postcode / Naam",
+    "zips": "Locaties"
+}
