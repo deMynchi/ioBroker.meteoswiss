@@ -157,6 +157,7 @@ class MeteoSwiss extends utils.Adapter {
                 'Accept-Language': this.config.language || 'de',
                 'User-Agent': USER_AGENT,
             },
+            timeout: 15000,
         });
 
         await this.ensureDatabase();
