@@ -10,7 +10,8 @@
   "keywords": [
     "weather",
     "meteo",
-    "switzerland"
+    "switzerland",
+    "ioBroker"
   ],
   "repository": {
     "type": "git",
