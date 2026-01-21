@@ -129,7 +129,7 @@ type GetDataResponse = { value: string; label: string }[];
 class MeteoSwiss extends utils.Adapter {
     private axios!: AxiosInstance;
     private database!: Database<sqlite3.Database, sqlite3.Statement>;
-    private refreshTimer?: NodeJS.Timeout;
+    private refreshTimer?: ioBroker.Timeout;
 
     public constructor(options: Partial<utils.AdapterOptions> = {}) {
         super({
@@ -342,7 +342,7 @@ class MeteoSwiss extends utils.Adapter {
         // randomize the timeout so not everybody sends a request at the same time (+/- 30 seconds)
         timeout += minutes(Math.random() - 0.5);
         this.log.debug(`Next update will be in ${timeout / 1000} seconds`);
-        this.refreshTimer = setTimeout(() => this.refresh(), timeout);
+        this.refreshTimer = this.setTimeout(() => this.refresh(), timeout);
     }
 
     private refresh(): void {
