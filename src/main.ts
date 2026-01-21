@@ -8,7 +8,7 @@ import * as utils from '@iobroker/adapter-core';
 import type { AxiosInstance } from 'axios';
 import axios from 'axios';
 import { createWriteStream, ensureDir } from 'fs-extra';
-import { join } from 'path';
+import { join } from 'node:path';
 import type { Database } from 'sqlite';
 import { open } from 'sqlite';
 import * as sqlite3 from 'sqlite3';
