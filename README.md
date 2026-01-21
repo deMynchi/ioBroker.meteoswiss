@@ -39,14 +39,14 @@ If no warning of a given category is active, the `warning-xx.level` state will h
 
 ## Changelog
 
-### **WORK IN PROGRESS**
-
-- (deMynchi) Fixes to satisfy code review
-
 <!--
 	Placeholder for the next version (at the beginning of the line):
 	### __WORK IN PROGRESS__
 -->
+
+### **WORK IN PROGRESS**
+
+- (deMynchi) Fixes to satisfy code review
 
 ### 1.0.1 (2026-01-06)
 
