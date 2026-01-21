@@ -43,8 +43,7 @@ If no warning of a given category is active, the `warning-xx.level` state will h
 	Placeholder for the next version (at the beginning of the line):
 	### __WORK IN PROGRESS__
 -->
-
-### **WORK IN PROGRESS**
+### 1.0.2 (2026-01-21)
 
 - (deMynchi) Fixes to satisfy code review
 
