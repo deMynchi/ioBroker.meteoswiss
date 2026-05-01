@@ -1,23 +1,27 @@
 version: 2
 updates:
   - package-ecosystem: npm
-    directory: "/"
+    directory: '/'
     schedule:
       interval: monthly
       day: 12
-      time: "00:05"
+      time: '00:05'
       timezone: Europe/Berlin
     open-pull-requests-limit: 5
     assignees:
       - deMynchi
     versioning-strategy: increase
+    ignore:
+      - dependency-name: '@types/node'
+        update-types:
+          - 'version-update:semver-major'
 
   - package-ecosystem: github-actions
-    directory: "/"
+    directory: '/'
     schedule:
       interval: monthly
       day: 12
-      time: "00:05"
+      time: '00:05'
       timezone: Europe/Berlin
     open-pull-requests-limit: 5
     assignees:
