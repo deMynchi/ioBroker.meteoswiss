@@ -78,6 +78,8 @@ If no warning of a given category is active, the `warning-xx.level` state will h
 
 - (deMynchi) initial release
 
+[Older changelogs can be found there](CHANGELOG_OLD.md)
+
 ## License
 
 MIT License
